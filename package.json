@@ -1,0 +1,31 @@
+{
+  "name": "clinics_link",
+  "version": "1.0.0",
+  "description": "一個綜合性的診所管理平台，專為台灣的診所設計，整合了線上預約、現場掛號和看診進度追蹤功能，提升工作效率和病患體驗。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cyan92128505/clinics_link.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cyan92128505/clinics_link/issues"
+  },
+  "homepage": "https://github.com/cyan92128505/clinics_link#readme",
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}
