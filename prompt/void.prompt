@@ -1,0 +1,82 @@
+**診所管理系統開發模板**
+
+我正在開發一個基於 NestJS 和 Clean Architecture 的診所管理系統後端。目前已經完成了初期設定，包括：
+
+- 架構設置：按照 Clean Architecture 分層 (Domain, Use Cases, Presentation, Infrastructure)
+- 資料庫：使用 PostgreSQL 和 Prisma ORM
+- 認證機制：JWT + Firebase Auth 整合
+- 即時通訊：MQTT
+- 快取：Redis
+
+**檔案命名慣例**:
+- 資料夾和檔案名稱使用底線（snake_case）形式
+- 類別和介面名稱使用駝峰式（PascalCase）形式
+- 變數和函數名稱使用小駝峰式（camelCase）形式
+
+**現有程式碼結構**:
+```
+src/
+├── domain/                         # 領域層
+│   ├── common/                     # 通用領域元素
+│   │   ├── entities/               # 基礎實體類
+│   │   ├── value_objects/          # 值物件
+│   │   ├── events/                 # 領域事件
+│   │   ├── interfaces/             # 通用介面
+│   │   └── exceptions/             # 領域例外
+│   └── [其他領域模組]/              # 各領域模組
+│
+├── usecases/                       # 使用案例層
+│   ├── common/                     # 通用使用案例元素
+│   │   ├── interfaces/             # 使用案例介面
+│   │   └── base/                   # 基礎使用案例類
+│   └── [各功能模組]/                # 各功能模組使用案例
+│       ├── commands/               # 命令處理
+│       │   ├── command_name/       # 命令名稱目錄
+│       │   │   ├── command_name.command.ts  # 命令定義
+│       │   │   ├── command_name.handler.ts  # 命令處理器
+│       │   │   └── command_name.response.ts # 命令回應
+│       └── queries/                # 查詢處理
+│           ├── query_name/         # 查詢名稱目錄
+│           │   ├── query_name.query.ts      # 查詢定義
+│           │   ├── query_name.handler.ts    # 查詢處理器
+│           │   └── query_name.response.ts   # 查詢回應
+│
+├── presentation/                   # 表現層
+│   ├── common/                     # 通用表示層元素
+│   │   ├── base.controller.ts      # 基礎控制器
+│   │   ├── filters/                # 異常過濾器
+│   │   └── interceptors/           # 攔截器
+│   ├── rest/                       # REST API 控制器
+│   └── mqtt/                       # MQTT 網關
+│
+├── infrastructure/                 # 基礎設施層
+│   ├── common/                     # 通用基礎設施元素
+│   │   ├── database/               # 資料庫相關
+│   │   └── mqtt/                   # MQTT 相關
+│   ├── auth/                       # 認證相關
+│   │   ├── services/               # 認證服務
+│   │   ├── guards/                 # 認證守衛
+│   │   └── strategies/             # 認證策略
+│   ├── repositories/               # 資料庫存取實現
+│   └── mappers/                    # 資料映射器
+│
+└── app/                            # 應用程式模組
+    ├── auth/                       # 認證模組
+    └── [其他功能模組]/              # 其他功能模組
+```
+
+**資料模型**:
+基於 Prisma Schema 定義，主要實體包括：
+- Clinic (診所)
+- User (使用者)
+- Patient (患者)
+- Doctor (醫生)
+- Department (科別)
+- Room (診間)
+- Appointment (預約/掛號)
+
+**目前的技術需求/問題**: 
+[具體描述你當前需要解決的問題或實作的功能]
+
+請協助我按照 Clean Architecture 的原則設計和實作上述技術需求，確保與現有程式碼結構和命名風格保持一致。
+

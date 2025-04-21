@@ -1,0 +1,108 @@
+
+### 主要目錄結構
+```
+src/
+├── domain/
+│   └── common/
+│       ├── entities/
+│       ├── value_objects/
+│       ├── events/
+│       ├── interfaces/
+│       └── exceptions/
+├── usecases/
+│   └── common/
+│       ├── interfaces/
+│       └── base/
+├── presentation/
+│   ├── common/
+│       ├── filters/
+│       └── interceptors/
+│   ├── rest/
+│   └── mqtt/
+├── infrastructure/
+│   ├── common/
+│       ├── database/
+│       └── mqtt/
+│   ├── auth/
+│       ├── services/
+│       ├── guards/
+│       └── strategies/
+│   ├── repositories/
+│   └── mappers/
+└── app/
+    └── auth/
+```
+
+### 基本檔案
+```
+src/domain/common/entities/base_entity.ts
+src/domain/common/value_objects/base_value_object.ts
+src/domain/common/events/domain_event.ts
+src/domain/common/interfaces/base_repository.interface.ts
+src/domain/common/exceptions/domain_exception.ts
+
+src/usecases/common/base/base_use_case.ts
+src/usecases/common/interfaces/use_case.interface.ts
+
+src/presentation/common/base_controller.ts
+src/presentation/common/filters/http_exception.filter.ts
+
+src/infrastructure/common/database/prisma/prisma.service.ts
+src/infrastructure/common/database/prisma/prisma.module.ts
+src/infrastructure/common/mqtt/mqtt.service.ts
+src/infrastructure/common/mqtt/mqtt.module.ts
+
+src/infrastructure/auth/services/auth.service.ts
+src/infrastructure/auth/guards/jwt_auth.guard.ts
+src/infrastructure/auth/guards/roles.guard.ts
+src/infrastructure/auth/strategies/jwt.strategy.ts
+src/infrastructure/auth/strategies/local.strategy.ts
+src/infrastructure/auth/decorators/public.decorator.ts
+src/infrastructure/auth/decorators/roles.decorator.ts
+
+src/app/auth/auth.module.ts
+src/app.module.ts
+src/main.ts
+```
+
+### 認證模組已實作的命令檔案
+```
+src/usecases/auth/commands/login/login.command.ts
+src/usecases/auth/commands/login/login.handler.ts
+src/usecases/auth/commands/login/login.response.ts
+
+src/usecases/auth/commands/register/register.command.ts
+src/usecases/auth/commands/register/register.handler.ts
+src/usecases/auth/commands/register/register.response.ts
+
+src/usecases/auth/commands/select_clinic/select_clinic.command.ts
+src/usecases/auth/commands/select_clinic/select_clinic.handler.ts
+src/usecases/auth/commands/select_clinic/select_clinic.response.ts
+
+src/usecases/auth/commands/verify_firebase_token/verify_firebase_token.command.ts
+src/usecases/auth/commands/verify_firebase_token/verify_firebase_token.handler.ts
+src/usecases/auth/commands/verify_firebase_token/verify_firebase_token.response.ts
+```
+
+### 認證模組查詢
+```
+src/usecases/auth/queries/get_current_user/get_current_user.query.ts
+src/usecases/auth/queries/get_current_user/get_current_user.handler.ts
+src/usecases/auth/queries/get_current_user/get_current_user.response.ts
+```
+
+### 認證控制器
+```
+src/presentation/rest/auth/auth.controller.ts
+```
+
+### 配置文件
+```
+.env.example
+.gitignore
+docker-compose.dev.yml
+Dockerfile
+package.json
+prisma/schema.prisma
+README.md
+```
