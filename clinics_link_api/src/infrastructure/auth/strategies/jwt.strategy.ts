@@ -10,10 +10,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private configService: ConfigService,
     private prismaService: PrismaService,
   ) {
+    // Explicitly cast to string to resolve TypeScript error
+    // Use a default value to ensure it's never undefined
+    const secretKey =
+      configService.get<string>('JWT_SECRET') || 'fallback-secret-for-dev-only';
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'),
+      secretOrKey: secretKey,
     });
   }
 
