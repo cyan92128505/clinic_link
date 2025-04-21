@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  api:
+    image: clinic-system-api:${VERSION}
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${PROD_DATABASE_URL}
+      - REDIS_URL=${PROD_REDIS_URL}
+      - JWT_SECRET=${PROD_JWT_SECRET}
+      - MQTT_BROKER_URL=${PROD_MQTT_BROKER_URL}
+      - FIREBASE_CREDENTIALS=${PROD_FIREBASE_CREDENTIALS}
+    depends_on:
+      - postgres
+      - redis
+      - mqtt-broker
+    networks:
+      - internal
+      - web
+
+  web:
+    image: clinic-system-web:${VERSION}
+    deploy:
+      replicas: 2
+    environment:
+      - VITE_API_URL=${PROD_API_URL}
+      - VITE_MQTT_BROKER_URL=${PROD_MQTT_WS_URL}
+      - VITE_FIREBASE_CONFIG=${PROD_FIREBASE_CONFIG}
+    networks:
+      - web
+
+  postgres:
+    image: postgres:15-alpine
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${PROD_DB_PASSWORD}
+      - POSTGRES_USER=${PROD_DB_USER}
+      - POSTGRES_DB=${PROD_DB_NAME}
+    networks:
+      - internal
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    networks:
+      - internal
+
+  mqtt-broker:
+    image: emqx:5.8.6
+    ports:
+      - '1883:1883'
+      - '8084:8084'
+    volumes:
+      - emqx-data:/opt/emqx/data
+      - emqx-etc:/opt/emqx/etc
+    environment:
+      - EMQX_ALLOW_ANONYMOUS=false
+      - EMQX_ACL_NOMATCH=deny
+    networks:
+      - internal
+      - web
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - api
+      - web
+    networks:
+      - web
+
+networks:
+  internal:
+    internal: true
+  web:
+
+volumes:
+  postgres-data:
+  redis-data:
+  emqx-data:
+  emqx-etc:
