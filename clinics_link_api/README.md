@@ -1,98 +1,129 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 診所管理系統後端
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+這是一個使用 NestJS、Prisma、PostgreSQL 構建的診所管理系統後端 API。
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 技術架構
 
-## Description
+- **框架**：NestJS + TypeScript
+- **資料庫**：PostgreSQL
+- **ORM**：Prisma
+- **認證**：JWT + Firebase Auth
+- **即時通訊**：MQTT
+- **快取**：Redis
+- **API 文件**：Swagger/OpenAPI
+- **架構模式**：Clean Architecture
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 系統需求
 
-## Project setup
+- Node.js 18+
+- Docker 和 Docker Compose
+- PostgreSQL 14+
+
+## 快速開始
+
+### 使用 Docker 開發環境
+
+1. 啟動開發環境：
 
 ```bash
-$ npm install
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
-## Compile and run the project
+這將啟動 PostgreSQL、Redis、MQTT Broker 和 pgAdmin。
+
+2. 複製環境變數範本：
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+cp .env.example .env
 ```
 
-## Run tests
+3. 安裝依賴：
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+4. 生成 Prisma 客戶端：
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run prisma:generate
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+5. 執行資料庫遷移：
 
-## Resources
+```bash
+npm run prisma:migrate
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+6. 啟動開發伺服器：
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+npm run start:dev
+```
 
-## Support
+應用程式將在 <http://localhost:3000> 上執行。
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Swagger API 文件
 
-## Stay in touch
+API 文件可以在 <http://localhost:3000/docs> 瀏覽。
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## 資料庫管理
 
-## License
+- pgAdmin 可以在 <http://localhost:5050> 瀏覽
+  - 使用者: admin@example.com
+  - 密碼: admin
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 架構說明
+
+本系統採用 Clean Architecture，分為四個主要層級：
+
+1. **Domain 層** - 業務核心，包含業務實體、規則和介面定義
+2. **Use Cases 層** - 應用程式特定業務邏輯，協調領域實體
+3. **Presentation 層** - 處理外部輸入和輸出，如 API 控制器、MQTT 等
+4. **Infrastructure 層** - 實現技術細節，如資料庫存取、外部服務等
+
+## 開發指南
+
+### 生成新模組
+
+```bash
+nest g module app/module-name
+```
+
+### 生成新控制器
+
+```bash
+nest g controller presentation/rest/module-name
+```
+
+### 生成新服務
+
+```bash
+nest g service infrastructure/services/service-name
+```
+
+### 執行測試
+
+```bash
+# 單元測試
+npm run test
+
+# e2e 測試
+npm run test:e2e
+
+# 測試覆蓋率
+npm run test:cov
+```
+
+## MQTT 主題
+
+系統使用以下 MQTT 主題結構：
+
+- `cms/clinic/{clinic_id}/queue/updates` - 候診隊列更新
+- `cms/clinic/{clinic_id}/room/{room_id}/status` - 診間狀態變更
+- `cms/clinic/{clinic_id}/notifications` - 系統通知
+- `cms/patient/{patient_id}/notifications` - 病患專屬通知
+
+## 授權條款
+
+MIT

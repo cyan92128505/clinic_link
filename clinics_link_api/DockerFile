@@ -1,0 +1,58 @@
+# Development stage
+FROM node:23-alpine AS development
+
+# Create app directory
+WORKDIR /usr/src/app
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install dependencies (including development dependencies)
+RUN npm ci
+
+# Copy source files
+COPY . .
+
+# Generate Prisma client
+RUN npm run prisma:generate
+
+# Build stage
+FROM node:23-alpine AS build
+
+WORKDIR /usr/src/app
+
+COPY --from=development /usr/src/app/node_modules ./node_modules
+COPY --from=development /usr/src/app/prisma ./prisma
+COPY . .
+
+# Generate Prisma client and build app
+RUN npm run prisma:generate
+RUN npm run build
+
+# Remove dev dependencies
+RUN npm ci --only=production
+
+# Production stage
+FROM node:23-alpine AS production
+
+# Set NODE_ENV
+ARG NODE_ENV=production
+ENV NODE_ENV=${NODE_ENV}
+
+WORKDIR /usr/src/app
+
+# Copy built app and production dependencies
+COPY --from=build /usr/src/app/dist ./dist
+COPY --from=build /usr/src/app/node_modules ./node_modules
+COPY --from=build /usr/src/app/prisma ./prisma
+COPY --from=build /usr/src/app/package*.json ./
+
+# Generate Prisma client for production
+RUN npm run prisma:generate
+
+# Expose port
+EXPOSE 3000
+
+# Start app
+CMD ["node", "dist/main"]
