@@ -1,4 +1,4 @@
-# 診所管理整合系統
+# 診所管理整合系統 Clinic Link
 
 一個綜合性的診所管理平台，專為台灣的診所設計，整合了線上預約、現場掛號和看診進度追蹤功能，提升工作效率和病患體驗。
 
@@ -309,12 +309,12 @@ src/
 └── domain/
     ├── common/                     # 通用領域元素
     │   ├── entities/               # 基礎實體類
-    │   ├── value-objects/          # 值物件
+    │   ├── value_objects/          # 值物件
     │   └── interfaces/             # 通用介面
     │
     ├── appointments/               # 預約領域
     │   ├── entities/               # 預約實體
-    │   ├── value-objects/          # 預約相關值物件
+    │   ├── value_objects/          # 預約相關值物件
     │   ├── events/                 # 領域事件
     │   ├── interfaces/             # 領域介面，如儲存庫介面
     │   └── exceptions/             # 領域例外
@@ -347,13 +347,19 @@ src/
     │
     ├── appointments/               # 預約使用案例
     │   ├── commands/               # 命令處理
-    │   │   ├── create-appointment/ # 建立預約命令
-    │   │   ├── update-appointment/ # 更新預約命令
-    │   │   └── cancel-appointment/ # 取消預約命令
+    │   │   ├── create_appointment/ # 建立預約命令
+    │   │   │   ├── create_appointment.command.ts  # 命令定義
+    │   │   │   ├── create_appointment.handler.ts  # 命令處理器
+    │   │   │   └── create_appointment.response.ts # 命令回應
+    │   │   ├── update_appointment/ # 更新預約命令
+    │   │   └── cancel_appointment/ # 取消預約命令
     │   │
     │   └── queries/                # 查詢處理
-    │       ├── get-appointments/   # 取得預約列表查詢
-    │       └── get-appointment/    # 取得單一預約查詢
+    │       ├── get_appointments/   # 取得預約列表查詢
+    │       │   ├── get_appointments.query.ts      # 查詢定義
+    │       │   ├── get_appointments.handler.ts    # 查詢處理器
+    │       │   └── get_appointments.response.ts   # 查詢回應
+    │       └── get_appointment/    # 取得單一預約查詢
     │
     ├── clinics/                    # 診所使用案例
     ├── patients/                   # 病患使用案例
@@ -438,7 +444,7 @@ src/
     │   ├── clinic.mapper.ts
     │   └── ...
     │
-    └── external-services/          # 外部服務整合
+    └── external_services/          # 外部服務整合
         ├── notification/           # 通知服務
         └── firebase/               # Firebase 服務
 ```
@@ -536,10 +542,10 @@ src/
 │   ├── ui/                         # UI 元件 (shadcn/ui)
 │   ├── layout/                     # 布局元件
 │   ├── form/                       # 表單元件
-│   └── data-display/               # 資料展示元件
+│   └── data_display/               # 資料展示元件
 ├── context/                        # React Context
-│   ├── auth-context.tsx            # 認證上下文
-│   └── clinic-context.tsx          # 診所上下文
+│   ├── auth_context.tsx            # 認證上下文
+│   └── clinic_context.tsx          # 診所上下文
 ├── features/                       # 功能模組
 │   ├── auth/                       # 認證功能
 │   ├── dashboard/                  # 儀表板
@@ -549,10 +555,10 @@ src/
 │   ├── rooms/                      # 診間管理
 │   └── settings/                   # 系統設定
 ├── hooks/                          # 自定義 Hooks
-│   ├── use-auth.ts                 # 認證 Hook
-│   ├── use-clinic.ts               # 診所 Hook
-│   ├── use-mqtt.ts                 # mqtt Hook
-│   └── use-permission.ts           # 權限檢查 Hook
+│   ├── use_auth.ts                 # 認證 Hook
+│   ├── use_clinic.ts               # 診所 Hook
+│   ├── use_mqtt.ts                 # mqtt Hook
+│   └── use_permission.ts           # 權限檢查 Hook
 ├── lib/                            # 工具庫
 │   ├── api.ts                      # API 客戶端
 │   ├── mqtt.ts                     # MQTT 客戶端
@@ -561,9 +567,9 @@ src/
 ├── routes/                         # 路由設定
 │   └── index.tsx                   # 路由定義
 ├── services/                       # 服務層
-│   ├── auth-service.ts             # 認證服務
-│   ├── patient-service.ts          # 病患服務
-│   └── appointment-service.ts      # 預約服務
+│   ├── auth_service.ts             # 認證服務
+│   ├── patient_service.ts          # 病患服務
+│   └── appointment_service.ts      # 預約服務
 ├── store/                          # 狀態管理
 │   └── queries/                    # React Query
 ├── types/                          # TypeScript 型別定義
@@ -571,9 +577,9 @@ src/
 │   ├── clinic.types.ts             # 診所相關型別
 │   └── api.types.ts                # API 相關型別
 └── utils/                          # 工具函數
-    ├── date-utils.ts               # 日期處理
-    ├── format-utils.ts             # 格式化工具
-    └── permission-utils.ts         # 權限相關工具
+    ├── date_utils.ts               # 日期處理
+    ├── format_utils.ts             # 格式化工具
+    └── permission_utils.ts         # 權限相關工具
 ```
 
 ## 身分驗證架構
@@ -692,148 +698,3 @@ src/
   - 實現組件懶加載
   - 使用 React.memo 和 useMemo 減少不必要的重渲染
   - 使用虛擬滾動處理大量數據顯示
-
-### 擴展性設計
-- **水平擴展**：
-  - 無狀態 API 服務設計，支持多實例部署
-  - 使用 Kubernetes 進行容器編排和自動擴展
-  - 資料庫讀寫分離準備
-
-- **多租戶擴展**：
-  - 基於 clinic_id 的邏輯隔離
-  - 每租戶資源限制機制
-  - 根據租戶使用情況自動調整資源分配
-
-- **微服務準備**：
-  - 模塊化設計便於未來拆分為微服務
-  - 領域模型邊界清晰定義
-  - 事件驅動架構為服務通信做準備
-
-### 負載測試與監控
-- **負載測試策略**：
-  - 使用 k6 進行 API 壓力測試
-  - 模擬高峰期場景的性能測試
-  - 定期執行基準測試並記錄性能指標
-
-- **監控體系**：
-  - Prometheus 收集系統和應用指標
-  - Grafana 儀表板可視化性能數據
-  - ELK Stack 集中日誌管理與分析
-  - 設置關鍵指標警報機制
-
-### 故障恢復
-- **數據備份策略**：
-  - PostgreSQL 定時全量和增量備份
-  - 跨區域備份存儲
-  - 定期恢復測試演練
-
-- **高可用設計**：
-  - 關鍵服務多實例部署
-  - MQTT Broker 集群配置
-  - Redis 哨兵模式或叢集模式
-
-## 部署工作流程與環境配置
-
-### 環境定義
-- **開發環境 (DEV)**：
-  - 開發人員本地環境，使用 Docker Compose 啟動所有依賴
-  - 使用本地數據庫或共享開發數據庫
-  - 自動應用數據庫遷移
-
-- **測試環境 (QA)**：
-  - 自動化測試和手動測試環境
-  - 定期重置數據
-  - 模擬生產環境配置
-
-- **預發布環境 (STAGING)**：
-  - 與生產環境配置相同
-  - 用於最終驗證和壓力測試
-  - 生產數據子集或匿名化數據
-
-- **生產環境 (PROD)**：
-  - 高可用性配置
-  - 嚴格的變更控制
-  - 自動擴展能力
-
-### CI/CD 流程
-1. **代碼提交階段**：
-   - 提交前 Lint 和格式檢查
-   - 提交後自動運行單元測試
-
-2. **合併請求階段**：
-   - 自動部署到開發環境
-   - 運行整合測試和端到端測試
-   - 自動生成測試覆蓋率報告
-
-3. **合併主分支後**：
-   - 自動部署到測試環境
-   - 運行完整測試套件
-   - 生成部署包
-
-4. **發布階段**：
-   - 手動批准部署到預發佈環境
-   - 自動化冒煙測試
-   - 手動批准部署到生產環境
-   - 分批滾動部署
-
-### 環境變數管理
-- 使用 HashiCorp Vault 或 AWS Secrets Manager 管理機密
-- 環境變數模板文件納入版本控制
-- 敏感值通過 CI/CD 系統注入
-
-### 部署監控和回滾
-- 部署進度儀表板
-- 自動化部署健康檢查
-- 一鍵式回滾機制
-- 部署後自動化測試
-
-## API端點文件
-
-### 身分驗證API
-
-- `POST /api/auth/register` - 註冊新使用者及診所
-- `POST /api/auth/login` - 使用者登入
-- `POST /api/auth/logout` - 使用者登出
-- `GET /api/auth/user` - 取得目前使用者資訊
-- `POST /api/auth/select-clinic` - 選擇目前操作診所
-
-### 病患API
-
-- `GET /api/patients` - 取得病患列表
-- `POST /api/patients` - 建立新病患
-- `GET /api/patients/:id` - 取得特定病患
-- `PUT /api/patients/:id` - 更新病患資訊
-- `DELETE /api/patients/:id` - 刪除病患
-
-### 預約API
-
-- `GET /api/appointments` - 取得預約列表
-- `POST /api/appointments` - 建立新預約
-- `GET /api/appointments/:id` - 取得特定預約
-- `PUT /api/appointments/:id` - 更新預約狀態
-- `DELETE /api/appointments/:id` - 刪除預約
-
-### MQTT API
-
-- **Broker連接**: `mqtt://broker:1883` 或 `wss://broker:8084/mqtt`
-- **主題結構**:
-  - `cms/clinic/{clinic_id}/queue/updates`: 候診隊列更新
-  - `cms/clinic/{clinic_id}/room/{room_id}/status`: 診間狀態變更
-  - `cms/clinic/{clinic_id}/notifications`: 系統通知
-  - `cms/patient/{patient_id}/notifications`: 病患專屬通知
-
-## 多平台支援
-
-系統支援多種前端平台:
-
-- **Web前端**: React + TypeScript，適用於診所人員操作
-- **Flutter應用**: 提供病患使用的行動應用程式，包含掛號、看診進度和提醒功能
-- **ESP32看板**: 顯示候診列表的資訊看板，適用於診所現場展示
-
-## 技術支援和貢獻
-
-如有任何問題或建議，請透過GitHub Issues提交。我們歡迎所有形式的貢獻，包括功能請求、錯誤回報和程式碼貢獻。
-
-## 授權條款
-
-MIT

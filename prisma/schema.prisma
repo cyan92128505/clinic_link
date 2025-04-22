@@ -1,8 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -17,7 +15,7 @@ model Clinic {
   phone     String
   email     String?
   logo      String?
-  settings  Json? // Clinic settings like working hours, holiday dates, etc.
+  settings  Json? // Clinic settings like working hours, holidays
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -93,7 +91,7 @@ model Department {
   clinicId    String
   name        String
   description String?
-  color       String? // Color for frontend display
+  color       String? // For frontend display
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -115,7 +113,7 @@ model Doctor {
   licenseNumber String?
   bio           String?
   avatar        String?
-  scheduleData  Json? // Doctor schedule data
+  scheduleData  Json? // Doctor scheduling data
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -163,13 +161,13 @@ model Appointment {
   patientId         String
   doctorId          String?
   roomId            String?
-  appointmentNumber Int? // Appointment sequence number
+  appointmentNumber Int? // Appointment number
   appointmentTime   DateTime? // Scheduled time
   checkinTime       DateTime? // Check-in time
-  startTime         DateTime? // Start time
-  endTime           DateTime? // End time
+  startTime         DateTime? // Start time of appointment
+  endTime           DateTime? // End time of appointment
   status            AppointmentStatus @default(SCHEDULED)
-  source            AppointmentSource @default(WALK_IN) // Appointment source
+  source            AppointmentSource @default(WALK_IN) // Appointment source/method
   note              String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
@@ -206,8 +204,8 @@ model ActivityLog {
 }
 
 enum Role {
-  ADMIN // System admin
-  CLINIC_ADMIN // Clinic admin
+  ADMIN // System administrator
+  CLINIC_ADMIN // Clinic administrator
   DOCTOR // Doctor
   NURSE // Nurse
   STAFF // General staff
@@ -221,24 +219,24 @@ enum Gender {
 }
 
 enum RoomStatus {
-  OPEN // Open for consultation
-  PAUSED // Paused
-  CLOSED // Closed
+  OPEN // Room is open for appointments
+  PAUSED // Temporarily paused
+  CLOSED // Room is closed
 }
 
 enum AppointmentStatus {
-  SCHEDULED // Scheduled
-  CHECKED_IN // Checked in
-  IN_PROGRESS // In progress
-  COMPLETED // Completed
-  CANCELLED // Cancelled
-  NO_SHOW // No show
+  SCHEDULED // Scheduled appointment
+  CHECKED_IN // Patient has checked in
+  IN_PROGRESS // Currently in progress
+  COMPLETED // Completed appointment
+  CANCELLED // Cancelled appointment
+  NO_SHOW // Patient didn't show up
 }
 
 enum AppointmentSource {
-  WALK_IN // Walk-in
-  PHONE // Phone
-  ONLINE // Online
-  LINE // LINE
-  APP // Mobile app
+  WALK_IN // Walk-in registration
+  PHONE // Phone reservation
+  ONLINE // Online reservation
+  LINE // LINE app reservation
+  APP // Mobile app reservation
 }

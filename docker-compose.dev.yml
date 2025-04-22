@@ -1,0 +1,102 @@
+# docker-compose.dev.yml
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - '3000:3000'
+      - '9229:9229' # Debug port
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules # Prevent mounting host node_modules
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/clinic_management
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=dev_secret
+      - MQTT_BROKER_URL=mqtt://mqtt-broker:1883
+      - FIREBASE_CREDENTIALS={}
+    depends_on:
+      - postgres
+      - redis
+      - mqtt-broker
+    networks:
+      - clinic-network
+    restart: unless-stopped
+
+  web:
+    image: node:23-alpine
+    working_dir: /usr/src/app
+    command: sh -c "npm ci && npm run dev"
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./web:/usr/src/app
+      - /usr/src/app/node_modules # Prevent mounting host node_modules
+    environment:
+      - VITE_API_URL=http://localhost:3000
+      - VITE_MQTT_BROKER_URL=ws://localhost:8084/mqtt
+      - VITE_FIREBASE_CONFIG={}
+    depends_on:
+      - api
+    networks:
+      - clinic-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=clinic_management
+    networks:
+      - clinic-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    networks:
+      - clinic-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mqtt-broker:
+    image: emqx:5.8.6
+    ports:
+      - '1883:1883'
+      - '8084:8084'
+      - '18083:18083' # EMQX dashboard
+    volumes:
+      - emqx-data:/opt/emqx/data
+      - emqx-etc:/opt/emqx/etc
+    environment:
+      - EMQX_ALLOW_ANONYMOUS=true
+    networks:
+      - clinic-network
+
+networks:
+  clinic-network:
+
+volumes:
+  postgres-data:
+  redis-data:
+  emqx-data:
+  emqx-etc:
