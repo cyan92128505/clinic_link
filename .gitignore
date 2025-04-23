@@ -45,6 +45,7 @@ coverage
 # temp directory
 .temp
 .tmp
+keys
 
 # Runtime data
 pids

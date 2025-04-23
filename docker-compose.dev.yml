@@ -13,12 +13,15 @@ services:
       - ./:/usr/src/app
       - /usr/src/app/node_modules # Prevent mounting host node_modules
     environment:
-      - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/clinic_management
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=dev_secret
-      - MQTT_BROKER_URL=mqtt://mqtt-broker:1883
-      - FIREBASE_CREDENTIALS={}
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/clinic_management}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - JWT_SECRET=${JWT_SECRET:-dev_secret}
+      - MQTT_BROKER_URL=${MQTT_BROKER_URL:-mqtt://mqtt-broker:1883}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-{}}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY:-{}}
+      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL:-{}}
+
     depends_on:
       - postgres
       - redis
