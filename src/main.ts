@@ -12,7 +12,10 @@ async function bootstrap() {
   const port = configService.get<number>('PORT', 3000);
   const apiPrefix = configService.get<string>('API_PREFIX', 'api');
   const globalPrefix = configService.get<string>('GLOBAL_PREFIX', 'v1');
-  const corsOrigin = configService.get<string>(
+  const environment = configService.get<string>('NODE_ENV', 'development');
+
+  // Get CORS settings from environment variables
+  const corsOriginEnv = configService.get<string>(
     'CORS_ORIGIN',
     'http://localhost:5173',
   );
@@ -20,11 +23,25 @@ async function bootstrap() {
   // Set global prefix
   app.setGlobalPrefix(`${apiPrefix}/${globalPrefix}`);
 
-  // Enable CORS
-  app.enableCors({
-    origin: corsOrigin,
-    credentials: true,
-  });
+  // Configure CORS based on environment
+  if (environment === 'development') {
+    // In development, allow all origins
+    app.enableCors({
+      origin: true, // This allows all origins
+      credentials: true,
+    });
+    console.log('Development mode: CORS enabled for all origins');
+  } else {
+    // In production, use restricted origins from config
+    const corsOrigins = corsOriginEnv.split(',').map((origin) => origin.trim());
+    app.enableCors({
+      origin: corsOrigins,
+      credentials: true,
+    });
+    console.log(
+      `Production mode: CORS enabled for origins: ${corsOrigins.join(', ')}`,
+    );
+  }
 
   // Use global validation pipe
   app.useGlobalPipes(
