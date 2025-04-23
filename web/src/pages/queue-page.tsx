@@ -123,10 +123,10 @@ export default function QueuePage() {
   // Toggle room active status mutation
   const toggleRoomStatus = useMutation({
     mutationFn: async ({ roomId, isActive }: { roomId: number; isActive: boolean }) => {
-      await apiRequest("PUT", `/api/rooms/${roomId}`, { isActive });
+      await apiRequest("PUT", `/api/v1/rooms/${roomId}`, { isActive });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/rooms"] });
     },
     onError: (error) => {
       toast({
@@ -140,10 +140,10 @@ export default function QueuePage() {
   // Update appointment status mutation
   const updateAppointmentStatus = useMutation({
     mutationFn: async ({ appointmentId, status }: { appointmentId: number; status: string }) => {
-      await apiRequest("PUT", `/api/appointments/${appointmentId}`, { status });
+      await apiRequest("PUT", `/api/v1/appointments/${appointmentId}`, { status });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/appointments"] });
     },
     onError: (error) => {
       toast({

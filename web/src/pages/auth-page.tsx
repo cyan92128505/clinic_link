@@ -27,7 +27,7 @@ import { Loader2, User, Lock, Mail, UserPlus } from "lucide-react";
 
 // Login validation schema
 const loginFormSchema = z.object({
-  username: z.string().min(1, { message: "請輸入使用者名稱" }),
+  email: z.string().email({ message: "請輸入有效的電子郵件地址" }),
   password: z.string().min(1, { message: "請輸入密碼" }),
 });
 
@@ -35,12 +35,13 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 // Register validation schema
 const registerFormSchema = z.object({
-  username: z.string().min(3, { message: "使用者名稱至少需要3個字元" }),
+  email: z.string().email({ message: "請輸入有效的電子郵件地址" }),
   password: z.string().min(6, { message: "密碼至少需要6個字元" }),
-  fullName: z.string().min(1, { message: "請輸入姓名" }),
-  email: z.string().min(1, { message: "請輸入信箱" }),
-  role: z.string().min(1, { message: "請輸入職位" }).default("staff"),
-  department: z.string().optional(),
+  name: z.string().min(1, { message: "請輸入姓名" }),
+  phone: z.string().optional(),
+  clinicName: z.string().optional(),
+  clinicAddress: z.string().optional(),
+  clinicPhone: z.string().optional(),
 });
 
 type RegisterFormValues = z.infer<typeof registerFormSchema>;
@@ -61,7 +62,7 @@ export default function AuthPage() {
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -70,11 +71,13 @@ export default function AuthPage() {
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
-      fullName: "",
-      role: "staff",
-      department: "",
+      name: "",
+      phone: "",
+      clinicName: "",
+      clinicAddress: "",
+      clinicPhone: "",
     },
   });
 
@@ -168,7 +171,7 @@ export default function AuthPage() {
                 <CardHeader className="px-0 pt-0">
                   <CardTitle className="text-2xl">歡迎回來</CardTitle>
                   <CardDescription>
-                    請輸入您的帳號密碼登入系統
+                    請輸入您的信箱密碼登入系統
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0">
@@ -176,15 +179,15 @@ export default function AuthPage() {
                     <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                       <FormField
                         control={loginForm.control}
-                        name="username"
+                        name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>使用者名稱</FormLabel>
+                            <FormLabel>電子郵件</FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <User className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
+                                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
                                 <Input 
-                                  placeholder="輸入使用者名稱" 
+                                  placeholder="輸入電子郵件" 
                                   className="pl-10" 
                                   {...field} 
                                 />
@@ -257,15 +260,15 @@ export default function AuthPage() {
                     <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
                       <FormField
                         control={registerForm.control}
-                        name="username"
+                        name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>使用者名稱</FormLabel>
+                            <FormLabel>電子郵件</FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <User className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
+                                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
                                 <Input 
-                                  placeholder="輸入使用者名稱" 
+                                  placeholder="輸入電子郵件" 
                                   className="pl-10" 
                                   {...field} 
                                 />
@@ -298,7 +301,7 @@ export default function AuthPage() {
                       />
                       <FormField
                         control={registerForm.control}
-                        name="fullName"
+                        name="name"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>姓名</FormLabel>
@@ -306,7 +309,7 @@ export default function AuthPage() {
                               <div className="relative">
                                 <UserPlus className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
                                 <Input 
-                                  placeholder="輸入姓名" 
+                                  placeholder="輸入真實姓名" 
                                   className="pl-10" 
                                   {...field} 
                                 />
@@ -318,15 +321,15 @@ export default function AuthPage() {
                       />
                       <FormField
                         control={registerForm.control}
-                        name="department"
+                        name="phone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>部門/科別</FormLabel>
+                            <FormLabel>電話號碼</FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
+                                <User className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
                                 <Input 
-                                  placeholder="輸入部門或科別" 
+                                  placeholder="輸入電話號碼" 
                                   className="pl-10" 
                                   {...field} 
                                 />

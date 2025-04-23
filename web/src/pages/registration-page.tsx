@@ -51,14 +51,14 @@ export default function RegistrationPage() {
 
   // Fetch today's appointments
   const { data: appointments, isLoading } = useQuery<Appointment[]>({
-    queryKey: ["/api/appointments", { date: new Date().toISOString().split('T')[0] }],
+    queryKey: ["/api/v1/appointments", { date: new Date().toISOString().split('T')[0] }],
   });
 
   // Filter appointments by type (walk-in or pre-booked)
   const filteredAppointments = appointments?.filter(appointment => 
     activeTab === "walk-in" 
-      ? appointment.type === "walk_in" 
-      : appointment.type === "pre_booked"
+      ? appointment.source === "WALK_IN" 
+      : appointment.source != "WALK_IN"
   );
 
   return (
@@ -190,7 +190,7 @@ export default function RegistrationPage() {
                                         </div>
                                       </TableCell>
                                       <TableCell>
-                                        {formatTime(appointment.arrivalTime)}
+                                        {formatTime(appointment.checkinTime)}
                                       </TableCell>
                                       <TableCell>
                                         診間 {appointment.roomId}
@@ -256,7 +256,7 @@ export default function RegistrationPage() {
                                         </div>
                                       </TableCell>
                                       <TableCell>
-                                        {formatTime(appointment.scheduledTime)}
+                                        {formatTime(appointment.appointmentTime)}
                                       </TableCell>
                                       <TableCell>
                                         診間 {appointment.roomId}

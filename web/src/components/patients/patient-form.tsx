@@ -54,11 +54,11 @@ export function PatientForm({ patient, onSuccess }: PatientFormProps) {
     mutationFn: async (data: PatientFormValues) => {
       if (isEditing) {
         // Update patient
-        const response = await apiRequest("PUT", `/api/patients/${patient.patientId}`, data);
+        const response = await apiRequest("PUT", `/api/v1/patients/${patient.patientId}`, data);
         return response.json();
       } else {
         // Create patient
-        const response = await apiRequest("POST", "/api/patients", data);
+        const response = await apiRequest("POST", "/api/v1/patients", data);
         return response.json();
       }
     },
@@ -68,7 +68,7 @@ export function PatientForm({ patient, onSuccess }: PatientFormProps) {
         form.reset();
       }
       
-      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/patients"] });
       
       toast({
         title: isEditing ? "更新成功" : "建立成功",

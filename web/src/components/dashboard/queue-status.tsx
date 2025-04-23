@@ -18,11 +18,11 @@ export function QueueStatus() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   
   const { data: rooms, isLoading } = useQuery<RoomWithQueueInfo[]>({
-    queryKey: ["/api/rooms"],
+    queryKey: ["/api/v1/rooms"],
   });
 
   const { data: departments } = useQuery<{id: number, name: string}[]>({
-    queryKey: ["/api/departments"],
+    queryKey: ["/api/v1/departments"],
   });
 
   // Filter rooms by department

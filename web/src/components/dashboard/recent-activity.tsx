@@ -22,7 +22,7 @@ type ActivityLog = {
 export function RecentActivity() {
   // Fetch recent activity logs
   const { data: activityLogs, isLoading } = useQuery<ActivityLog[]>({
-    queryKey: ["/api/activity-logs"],
+    queryKey: ["/api/v1/activity-logs"],
   });
 
   // Get activity icon based on activity type

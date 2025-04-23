@@ -23,9 +23,9 @@ export default function DashboardPage() {
 
   // Fetch dashboard statistics
   const { data: stats, isLoading } = useQuery({
-    queryKey: ["/api/stats/dashboard"],
+    queryKey: ["/api/v1/stats/dashboard"],
     queryFn: async () => {
-      const res = await fetch("/api/stats/dashboard");
+      const res = await fetch("/api/v1/stats/dashboard");
       if (!res.ok) throw new Error("Failed to fetch dashboard statistics");
       return res.json();
     },

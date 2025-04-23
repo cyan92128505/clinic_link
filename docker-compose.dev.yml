@@ -40,9 +40,9 @@ services:
       - ./web:/app
       - /app/node_modules
     environment:
-      - VITE_API_URL=http://localhost:3000
-      - VITE_MQTT_BROKER_URL=ws://localhost:8084/mqtt
-      - VITE_FIREBASE_CONFIG={}
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
+      - VITE_MQTT_BROKER_URL=${VITE_MQTT_BROKER_URL:-ws://localhost:8084/mqtt}
+      - VITE_FIREBASE_CONFIG=${VITE_FIREBASE_CONFIG:-{}}
     depends_on:
       - api
     networks:

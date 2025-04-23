@@ -22,7 +22,7 @@ type NextAppointment = {
 export function NextAppointments() {
   // This would fetch the next appointments data from the API
   const { data: nextAppointments, isLoading } = useQuery<NextAppointment[]>({
-    queryKey: ["/api/appointments", { status: "checked_in" }],
+    queryKey: ["/api/v1/appointments", { status: "checked_in" }],
   });
 
   const getAppointmentTypeClass = (type: string) => {

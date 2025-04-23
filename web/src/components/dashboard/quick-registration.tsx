@@ -42,11 +42,11 @@ export function QuickRegistration() {
 
   // Get departments and doctors data
   const { data: departments } = useQuery<{id: number, name: string}[]>({
-    queryKey: ["/api/departments"],
+    queryKey: ["/api/v1/departments"],
   });
 
   const { data: doctors } = useQuery<{id: number, fullName: string, departmentId: number}[]>({
-    queryKey: ["/api/doctors"],
+    queryKey: ["/api/v1/doctors"],
   });
 
   // Create appointment mutation
@@ -63,13 +63,13 @@ export function QuickRegistration() {
         notes: data.notes
       };
 
-      const response = await apiRequest("POST", "/api/appointments", appointmentData);
+      const response = await apiRequest("POST", "/api/v1/appointments", appointmentData);
       return response.json();
     },
     onSuccess: () => {
       // Clear form and refetch data
       form.reset();
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/appointments"] });
       toast({
         title: "掛號成功",
         description: "患者已成功掛號",
@@ -90,7 +90,7 @@ export function QuickRegistration() {
     
     try {
       // This would make an API call to search for the patient
-      const response = await fetch(`/api/patients?patientId=${searchValue}`);
+      const response = await fetch(`/api/v1/patients?patientId=${searchValue}`);
       if (!response.ok) throw new Error("找不到此病歷號碼的患者");
       
       const patient = await response.json();

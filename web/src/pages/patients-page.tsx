@@ -41,14 +41,14 @@ export default function PatientsPage() {
 
   // Fetch patients
   const { data: patients, isLoading } = useQuery<Patient[]>({
-    queryKey: ["/api/patients"],
+    queryKey: ["/api/v1/patients"],
   });
 
   // Filter patients based on search
   const filteredPatients = patients?.filter(patient => 
     searchQuery === "" || 
-    patient.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    patient.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (patient.phone && patient.phone.includes(searchQuery))
   );
 
@@ -158,10 +158,10 @@ export default function PatientsPage() {
                         {filteredPatients?.map((patient) => (
                           <TableRow key={patient.id}>
                             <TableCell className="font-medium">
-                              {patient.patientId}
+                              {patient.id}
                             </TableCell>
                             <TableCell>
-                              {patient.fullName}
+                              {patient.name}
                             </TableCell>
                             <TableCell>
                               {patient.phone}
@@ -172,15 +172,15 @@ export default function PatientsPage() {
                               )}
                             </TableCell>
                             <TableCell>
-                              {patient.gender === "male" ? "男" : 
-                               patient.gender === "female" ? "女" : 
+                              {patient.gender === "MALE" ? "男" : 
+                               patient.gender === "FEMALE" ? "女" : 
                                patient.gender || "--"}
                             </TableCell>
                             <TableCell>
-                              {formatDate(patient.dateOfBirth)}
+                              {formatDate(patient.birthDate)}
                             </TableCell>
                             <TableCell>
-                              {formatDate(patient.registrationDate)}
+                              {formatDate(patient.createdAt)}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end space-x-2">

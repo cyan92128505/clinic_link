@@ -42,7 +42,7 @@ export default function AppointmentsPage() {
 
   // Fetch appointments
   const { data: appointments, isLoading } = useQuery<Appointment[]>({
-    queryKey: ["/api/appointments", { date: selectedDate }],
+    queryKey: ["/api/v1/appointments", { date: selectedDate }],
   });
 
   // Filter appointments based on search and status

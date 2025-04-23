@@ -9,19 +9,19 @@ import { useToast } from "@/hooks/use-toast";
 import { User } from "@/models";
 
 // Define types for our application
-
-
 type LoginData = {
-  username: string;
+  email: string;
   password: string;
 };
 
 type RegisterData = {
-  username: string;
-  password: string;
   email: string;
-  role?: string;
-  department? : string;
+  password: string;
+  name: string;
+  phone?: string;
+  clinicName?: string;
+  clinicAddress?: string;
+  clinicPhone?: string;
 };
 
 type AuthResponse = {
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     refetch,
   } = useQuery<User | null, Error>({
-    queryKey: ["/api/auth/user"],
+    queryKey: ["/api/v1/auth/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!localStorage.getItem("token"), // Only run if token exists
   });
@@ -58,19 +58,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/auth/login", credentials);
-      return await res.json();
+      const res = await apiRequest("POST", "/api/v1/auth/login", credentials);
+      const response = await res.json();
+      return response.data;
     },
     onSuccess: (data: AuthResponse) => {
       // Save token to localStorage
       localStorage.setItem("token", data.token);
       
       // Update user data in the cache
-      queryClient.setQueryData(["/api/auth/user"], data.user);
+      queryClient.setQueryData(["/api/v1/auth/user"], data.user);
       
       toast({
         title: "登入成功",
-        description: `歡迎回來，${data.user.username}!`,
+        description: `歡迎回來，${data.user.name}!`,
       });
     },
     onError: (error: Error) => {
@@ -85,19 +86,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
-      const res = await apiRequest("POST", "/api/auth/register", userData);
-      return await res.json();
+      const res = await apiRequest("POST", "/api/v1/auth/register", userData);
+      const response = await res.json();
+      return response.data;
     },
     onSuccess: (data: AuthResponse) => {
       // Save token to localStorage
       localStorage.setItem("token", data.token);
       
       // Update user data in the cache
-      queryClient.setQueryData(["/api/auth/user"], data.user);
+      queryClient.setQueryData(["/api/v1/auth/user"], data.user);
       
       toast({
         title: "註冊成功",
-        description: `歡迎加入，${data.user.username}!`,
+        description: `歡迎加入，${data.user.name}!`,
       });
     },
     onError: (error: Error) => {
@@ -120,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("token");
       
       // Clear user data from cache
-      queryClient.setQueryData(["/api/auth/user"], null);
+      queryClient.setQueryData(["/api/v1/auth/user"], null);
       
       toast({
         title: "登出成功",
