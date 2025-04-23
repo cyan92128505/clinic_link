@@ -40,8 +40,8 @@ async function bootstrap() {
 
   // Setup Swagger documentation
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Clinic Management System API')
-    .setDescription('API documentation for the Clinic Management System')
+    .setTitle('Clinics Link API')
+    .setDescription('API documentation for the Clinics Link')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
