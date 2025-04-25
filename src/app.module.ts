@@ -12,6 +12,8 @@ import { AuthModule } from './app/auth/auth.module';
 // import { DepartmentsModule } from './app/departments/departments.module';
 // import { ActivityLogsModule } from './app/activity-logs/activity-logs.module';
 import { MqttModule } from './infrastructure/common/mqtt/mqtt.module';
+import { HealthModule } from './app/health/health.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -42,6 +44,8 @@ import { MqttModule } from './infrastructure/common/mqtt/mqtt.module';
 
     // Application modules
     AuthModule,
+
+    HealthModule,
     // UsersModule,
     // ClinicsModule,
     // PatientsModule,
@@ -51,7 +55,7 @@ import { MqttModule } from './infrastructure/common/mqtt/mqtt.module';
     // DepartmentsModule,
     // ActivityLogsModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule {}

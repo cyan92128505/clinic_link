@@ -21,7 +21,9 @@ async function bootstrap() {
   );
 
   // Set global prefix
-  app.setGlobalPrefix(`${apiPrefix}/${globalPrefix}`);
+  app.setGlobalPrefix(`${apiPrefix}/${globalPrefix}`, {
+    exclude: ['', 'health'], // Exclude root path and health check from prefix
+  });
 
   // Configure CORS based on environment
   if (environment === 'development') {

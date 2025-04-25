@@ -40,18 +40,18 @@ help:
 .PHONY: dev-up
 dev-up:
 	@echo "Starting development environment..."
-	docker-compose -f docker-compose.dev.yml up -d
+	docker compose -f docker-compose.dev.yml up -d
 	@echo "Development environment started"
 
 .PHONY: dev-down
 dev-down:
 	@echo "Stopping development environment..."
-	docker-compose -f docker-compose.dev.yml down
+	docker compose -f docker-compose.dev.yml down
 	@echo "Development environment stopped"
 
 .PHONY: dev-logs
 dev-logs:
-	docker-compose -f docker-compose.dev.yml logs -f
+	docker compose -f docker-compose.dev.yml logs -f
 
 # Production environment commands
 .PHONY: prod-up
@@ -61,55 +61,55 @@ prod-up:
 		echo "Error: VERSION environment variable not set. Use: VERSION=1.0.0 make prod-up"; \
 		exit 1; \
 	fi
-	VERSION=$VERSION docker-compose up -d
+	VERSION=$VERSION docker compose up -d
 	@echo "Production environment started with version: $VERSION"
 
 .PHONY: prod-down
 prod-down:
 	@echo "Stopping production environment..."
-	docker-compose down
+	docker compose down
 	@echo "Production environment stopped"
 
 .PHONY: prod-logs
 prod-logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 .PHONY: prod-status
 prod-status:
 	@echo "Checking production services status..."
-	docker-compose ps
+	docker compose ps
 
 # Shell access commands
 .PHONY: api-shell
 api-shell:
-	docker-compose -f docker-compose.dev.yml exec api sh
+	docker compose -f docker-compose.dev.yml exec api sh
 
 .PHONY: web-shell
 web-shell:
-	docker-compose -f docker-compose.dev.yml exec web sh
+	docker compose -f docker-compose.dev.yml exec web sh
 
 # Development utility commands
 .PHONY: dev-restart
 dev-restart:
 	@echo "Restarting development services..."
-	docker-compose -f docker-compose.dev.yml restart
+	docker compose -f docker-compose.dev.yml restart
 	@echo "Development services restarted"
 
 .PHONY: dev-status
 dev-status:
 	@echo "Checking development services status..."
-	docker-compose -f docker-compose.dev.yml ps
+	docker compose -f docker-compose.dev.yml ps
 
 .PHONY: db-shell
 db-shell:
-	docker-compose -f docker-compose.dev.yml exec postgres psql -U postgres -d clinic_management
+	docker compose -f docker-compose.dev.yml exec postgres psql -U postgres -d clinic_management
 
 # Database commands
 .PHONY: db-backup
 db-backup:
 	@echo "Creating database backup..."
 	@mkdir -p ./backups
-	docker-compose -f docker-compose.dev.yml exec postgres pg_dump -U postgres -d clinic_management > ./backups/backup-$(date +%Y%m%d-%H%M%S).sql
+	docker compose -f docker-compose.dev.yml exec postgres pg_dump -U postgres -d clinic_management > ./backups/backup-$(date +%Y%m%d-%H%M%S).sql
 	@echo "Backup created in ./backups directory"
 
 # Build commands
@@ -163,7 +163,7 @@ prod-deploy:
 		echo "Error: VERSION environment variable not set. Use: VERSION=1.0.0 make prod-deploy"; \
 		exit 1; \
 	fi
-	VERSION=$VERSION docker-compose up -d
+	VERSION=$VERSION docker compose up -d
 	@echo "Production deployment completed with version: $VERSION"
 
 .PHONY: clean
