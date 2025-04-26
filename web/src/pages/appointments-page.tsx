@@ -1,57 +1,62 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Sidebar } from "@/components/ui/sidebar";
-import { TopNavigation } from "@/components/ui/top-navigation";
-import { AppointmentForm } from "@/components/appointments/appointment-form";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Appointment } from "@/models";
-import { formatDate, formatTime, getStatusInfo } from "@/lib/utils";
-import { Search, FileEdit, Trash2, CalendarPlus, Loader2 } from "lucide-react";
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Sidebar } from '@/components/ui/sidebar';
+import { TopNavigation } from '@/components/ui/top-navigation';
+import { AppointmentForm } from '@/components/appointments/appointment-form';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Appointment } from '@/models';
+import { formatDate, formatTime, getStatusInfo } from '@/lib/utils';
+import { Search, FileEdit, Trash2, CalendarPlus, Loader2 } from 'lucide-react';
+import { ApiResponse } from '@/models/common';
 
 export default function AppointmentsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split('T')[0],
+  );
   const [showForm, setShowForm] = useState(false);
 
   // Fetch appointments
-  const { data: appointments, isLoading } = useQuery<Appointment[]>({
-    queryKey: ["/api/v1/appointments", { date: selectedDate }],
+  const { data: res, isLoading } = useQuery<ApiResponse<Appointment[]>>({
+    queryKey: ['/api/v1/appointments', { date: selectedDate }],
   });
 
   // Filter appointments based on search and status
-  const filteredAppointments = appointments?.filter(appointment => {
-    const matchesSearch = searchQuery === "" || 
-      appointment.appointmentNumber.toLowerCase().includes(searchQuery.toLowerCase());
-      
-    const matchesStatus = statusFilter === "all" || appointment.status === statusFilter;
-    
+  const filteredAppointments = res?.data?.filter((appointment) => {
+    const matchesSearch =
+      searchQuery === '' ||
+      `${appointment.appointmentNumber}`.includes(searchQuery.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === 'all' || appointment.status === statusFilter;
+
     return matchesSearch && matchesStatus;
   });
 
@@ -71,18 +76,20 @@ export default function AppointmentsPage() {
             {/* Page header */}
             <div className="md:flex md:items-center md:justify-between mb-6">
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-semibold text-neutral-800">預約管理</h1>
+                <h1 className="text-2xl font-semibold text-neutral-800">
+                  預約管理
+                </h1>
                 <p className="mt-1 text-sm text-neutral-500">
                   管理所有預約掛號與現場掛號
                 </p>
               </div>
               <div className="mt-4 flex md:mt-0 md:ml-4">
-                <Button 
+                <Button
                   className="space-x-2"
                   onClick={() => setShowForm(!showForm)}
                 >
                   <CalendarPlus className="h-4 w-4" />
-                  <span>{showForm ? "隱藏表單" : "新增預約"}</span>
+                  <span>{showForm ? '隱藏表單' : '新增預約'}</span>
                 </Button>
               </div>
             </div>
@@ -98,9 +105,7 @@ export default function AppointmentsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>預約列表</CardTitle>
-                <CardDescription>
-                  查看和管理所有預約
-                </CardDescription>
+                <CardDescription>查看和管理所有預約</CardDescription>
               </CardHeader>
 
               {/* Filter controls */}
@@ -114,11 +119,8 @@ export default function AppointmentsPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                
-                <Select
-                  value={statusFilter}
-                  onValueChange={setStatusFilter}
-                >
+
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger>
                     <SelectValue placeholder="篩選狀態" />
                   </SelectTrigger>
@@ -132,7 +134,7 @@ export default function AppointmentsPage() {
                     <SelectItem value="no_show">未到診</SelectItem>
                   </SelectContent>
                 </Select>
-                
+
                 <Input
                   type="date"
                   value={selectedDate}
@@ -165,23 +167,26 @@ export default function AppointmentsPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredAppointments?.map((appointment) => {
-                          const { color, text } = getStatusInfo(appointment.status);
-                          
+                          const { color, text } = getStatusInfo(
+                            appointment.status,
+                          );
+
                           return (
                             <TableRow key={appointment.id}>
                               <TableCell className="font-medium">
                                 {appointment.appointmentNumber}
                               </TableCell>
                               <TableCell>
-                                患者名稱 {/* Would display patient name from joined data */}
+                                患者名稱{' '}
+                                {/* Would display patient name from joined data */}
                                 <div className="text-xs text-neutral-500">
                                   ID: {appointment.patientId}
                                 </div>
                               </TableCell>
                               <TableCell>
-                                {formatDate(appointment.scheduledTime)}
+                                {formatDate(appointment.appointmentTime)}
                                 <div className="text-xs text-neutral-500">
-                                  {formatTime(appointment.scheduledTime)}
+                                  {formatTime(appointment.appointmentTime)}
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -196,7 +201,9 @@ export default function AppointmentsPage() {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                {appointment.type === "pre_booked" ? "預約掛號" : "現場掛號"}
+                                {appointment.source != 'WALK_IN'
+                                  ? '預約掛號'
+                                  : '現場掛號'}
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end space-x-2">

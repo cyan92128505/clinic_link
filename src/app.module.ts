@@ -14,6 +14,7 @@ import { AuthModule } from './app/auth/auth.module';
 import { MqttModule } from './infrastructure/common/mqtt/mqtt.module';
 import { HealthModule } from './app/health/health.module';
 import { AppController } from './app.controller';
+import { AppointmentModule } from './app/appointment/appointment.module';
 
 @Module({
   imports: [
@@ -49,7 +50,7 @@ import { AppController } from './app.controller';
     // UsersModule,
     // ClinicsModule,
     // PatientsModule,
-    // AppointmentsModule,
+    AppointmentModule,
     // DoctorsModule,
     // RoomsModule,
     // DepartmentsModule,

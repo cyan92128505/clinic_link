@@ -161,26 +161,28 @@ model Appointment {
   patientId         String
   doctorId          String?
   roomId            String?
-  appointmentNumber Int? // Appointment number
-  appointmentTime   DateTime? // Scheduled time
-  checkinTime       DateTime? // Check-in time
-  startTime         DateTime? // Start time of appointment
-  endTime           DateTime? // End time of appointment
+  appointmentNumber Int? // 看診號碼
+  appointmentTime   DateTime? // 預約時間
+  checkinTime       DateTime? // 報到時間
+  startTime         DateTime? // 開始看診時間
+  endTime           DateTime? // 結束看診時間
   status            AppointmentStatus @default(SCHEDULED)
-  source            AppointmentSource @default(WALK_IN) // Appointment source/method
+  source            AppointmentSource @default(WALK_IN)
   note              String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
-  // Relations
+  // 關聯
   clinic  Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
   doctor  Doctor? @relation(fields: [doctorId], references: [id])
   room    Room?   @relation(fields: [roomId], references: [id])
 
+  @@unique([id, clinicId])
   @@index([clinicId, status])
   @@index([clinicId, appointmentTime])
   @@index([patientId, status])
+  @@map("appointments")
 }
 
 model ActivityLog {
