@@ -15,7 +15,7 @@ import {
   signOut,
   UserCredential,
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, browserPopupRedirectResolver } from '@/lib/firebase';
 
 // Define types for our application
 type LoginData = {
@@ -113,7 +113,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           break;
         case 'google':
           const provider = new GoogleAuthProvider();
-          userCredential = await signInWithPopup(auth, provider);
+          userCredential = await signInWithPopup(
+            auth,
+            provider,
+            browserPopupRedirectResolver,
+          );
           break;
         default:
           throw new Error('Unsupported login method');
