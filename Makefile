@@ -8,6 +8,7 @@ help:
 	@echo "===== Clinic Link Makefile ====="
 	@echo ""
 	@echo "Development commands:"
+	@echo "  make build        - Build development environment containers"
 	@echo "  make dev-up       - Start development environment containers"
 	@echo "  make dev-down     - Stop development environment containers"
 	@echo "  make dev-logs     - View logs from development containers"
@@ -37,6 +38,11 @@ help:
 	@echo "  make clean        - Clean temporary files"
 
 # Development environment commands
+.PHONY: build
+build:
+	@echo "Build development environment..."
+	docker compose -f docker-compose.dev.yml build
+
 .PHONY: dev-up
 dev-up:
 	@echo "Starting development environment..."
