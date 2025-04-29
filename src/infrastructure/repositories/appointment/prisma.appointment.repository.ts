@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/database/prisma/prisma.service';
 import { IAppointmentRepository } from '../../../domain/appointment/interfaces/appointment.repository.interface';
 import { Appointment } from '../../../domain/appointment/entities/appointment.entity';
-import { AppointmentStatus } from '../../../domain/appointment/value_objects/appointment.enum';
+import {
+  AppointmentStatus,
+  AppointmentStatusUtils,
+} from '../../../domain/appointment/value_objects/appointment.enum';
 
 @Injectable()
 export class PrismaAppointmentRepository implements IAppointmentRepository {
@@ -10,31 +13,33 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
 
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Find all appointments with optional filters
+   */
   async findAll(
     clinicId: string,
-    date: string | undefined,
-    status: AppointmentStatus | undefined,
+    filters?: Partial<Appointment>,
   ): Promise<Appointment[]> {
     // Build the where condition
     const where: any = { clinicId };
 
-    // Add date filter if provided
-    if (date) {
-      const startDate = new Date(date);
-      startDate.setHours(0, 0, 0, 0);
+    // Add filters if provided
+    if (filters) {
+      if (filters.status) {
+        where.status = filters.status;
+      }
 
-      const endDate = new Date(date);
-      endDate.setHours(23, 59, 59, 999);
+      if (filters.doctorId) {
+        where.doctorId = filters.doctorId;
+      }
 
-      where.appointmentTime = {
-        gte: startDate,
-        lte: endDate,
-      };
-    }
+      if (filters.patientId) {
+        where.patientId = filters.patientId;
+      }
 
-    // Add status filter if provided
-    if (status) {
-      where.status = status;
+      if (filters.roomId) {
+        where.roomId = filters.roomId;
+      }
     }
 
     try {
@@ -56,6 +61,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     }
   }
 
+  /**
+   * Find appointment by ID
+   */
   async findById(id: string, clinicId: string): Promise<Appointment | null> {
     try {
       const appointment = await this.prisma.appointment.findFirst({
@@ -79,6 +87,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     }
   }
 
+  /**
+   * Create a new appointment
+   */
   async create(appointment: Appointment): Promise<Appointment> {
     try {
       const createdAppointment = await this.prisma.appointment.create({
@@ -111,16 +122,19 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     }
   }
 
+  /**
+   * Update an existing appointment
+   */
   async update(
     id: string,
-    data: Partial<Appointment>,
     clinicId: string,
+    data: Partial<Appointment>,
   ): Promise<Appointment> {
     try {
       const updatedAppointment = await this.prisma.appointment.update({
         where: {
-          id: id,
           clinicId: clinicId,
+          id: id,
         },
         data,
       });
@@ -135,19 +149,199 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     }
   }
 
+  /**
+   * Delete an appointment
+   */
   async delete(id: string, clinicId: string): Promise<boolean> {
     try {
       const deletedAppointment = await this.prisma.appointment.delete({
         where: {
-          id: id,
           clinicId: clinicId,
+          id: id,
         },
       });
 
       return deletedAppointment != null;
     } catch (error) {
       this.logger.error(
-        `Error updating appointment: ${error.message}`,
+        `Error deleting appointment: ${error.message}`,
+        error.stack,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Find appointments by status
+   */
+  async findByStatus(
+    clinicId: string,
+    statuses: string[],
+  ): Promise<Appointment[]> {
+    try {
+      const appointments = await this.prisma.appointment.findMany({
+        where: {
+          clinicId,
+          status: {
+            in: statuses
+              .map((s) => AppointmentStatusUtils.fromString(s))
+              .filter((a) => a != null),
+          },
+        },
+        orderBy: [{ appointmentTime: 'asc' }, { createdAt: 'asc' }],
+      });
+
+      return appointments.map((appointment) =>
+        this.mapToDomainEntity(appointment),
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error finding appointments by status: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Find appointments by doctor
+   */
+  async findByDoctor(
+    clinicId: string,
+    doctorId: string,
+  ): Promise<Appointment[]> {
+    try {
+      const appointments = await this.prisma.appointment.findMany({
+        where: {
+          clinicId,
+          doctorId,
+        },
+        orderBy: [{ appointmentTime: 'asc' }, { createdAt: 'asc' }],
+      });
+
+      return appointments.map((appointment) =>
+        this.mapToDomainEntity(appointment),
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error finding appointments by doctor: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Find appointments by patient
+   */
+  async findByPatient(
+    clinicId: string,
+    patientId: string,
+  ): Promise<Appointment[]> {
+    try {
+      const appointments = await this.prisma.appointment.findMany({
+        where: {
+          clinicId,
+          patientId,
+        },
+        orderBy: [{ appointmentTime: 'desc' }],
+      });
+
+      return appointments.map((appointment) =>
+        this.mapToDomainEntity(appointment),
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error finding appointments by patient: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Find appointments by room
+   */
+  async findByRoom(clinicId: string, roomId: string): Promise<Appointment[]> {
+    try {
+      const appointments = await this.prisma.appointment.findMany({
+        where: {
+          clinicId,
+          roomId,
+        },
+        orderBy: [{ appointmentTime: 'asc' }, { createdAt: 'asc' }],
+      });
+
+      return appointments.map((appointment) =>
+        this.mapToDomainEntity(appointment),
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error finding appointments by room: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Find appointments by date
+   */
+  async findByDate(clinicId: string, date: Date): Promise<Appointment[]> {
+    try {
+      const startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+
+      const appointments = await this.prisma.appointment.findMany({
+        where: {
+          clinicId,
+          appointmentTime: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        orderBy: [{ appointmentTime: 'asc' }, { createdAt: 'asc' }],
+      });
+
+      return appointments.map((appointment) =>
+        this.mapToDomainEntity(appointment),
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error finding appointments by date: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update appointment status
+   */
+  async updateStatus(
+    id: string,
+    clinicId: string,
+    status: string,
+  ): Promise<Appointment> {
+    try {
+      const updatedAppointment = await this.prisma.appointment.update({
+        where: {
+          id: id,
+          clinicId: clinicId,
+        },
+        data: {
+          status: AppointmentStatusUtils.fromString(status),
+          updatedAt: new Date(),
+        },
+      });
+
+      return this.mapToDomainEntity(updatedAppointment);
+    } catch (error) {
+      this.logger.error(
+        `Error updating appointment status: ${error.message}`,
         error.stack,
       );
       throw error;
