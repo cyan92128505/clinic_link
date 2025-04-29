@@ -5,7 +5,6 @@ import {
 } from '../value_objects/appointment.enum';
 
 export class Appointment extends BaseEntity {
-  declare id: string;
   clinicId: string;
   patientId: string;
   doctorId?: string;
@@ -18,8 +17,6 @@ export class Appointment extends BaseEntity {
   status: AppointmentStatus;
   source: AppointmentSource;
   note?: string;
-  createdAt: Date;
-  updatedAt: Date;
 
   constructor(props: Partial<Appointment>) {
     super({
