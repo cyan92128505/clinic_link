@@ -69,8 +69,8 @@ export class UpdateAppointmentHandler {
     try {
       const updatedAppointment = await this.appointmentRepository.update(
         id,
-        updateData,
         clinicId,
+        updateData,
       );
       return new UpdateAppointmentResponse(updatedAppointment);
     } catch (error) {

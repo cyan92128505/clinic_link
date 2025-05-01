@@ -5,6 +5,9 @@ import {
   GetAppointmentsResponse,
   AppointmentResponse,
 } from './get_appointments.response';
+import { Appointment } from 'src/domain/appointment/entities/appointment.entity';
+import { DateTimeService } from 'src/infrastructure/common/services/datetime.service';
+import { AppointmentStatusUtils } from 'src/domain/appointment/value_objects/appointment.enum';
 
 @Injectable()
 export class GetAppointmentsHandler {
@@ -16,10 +19,23 @@ export class GetAppointmentsHandler {
   async execute(query: GetAppointmentsQuery): Promise<GetAppointmentsResponse> {
     const { clinicId, date, status } = query;
 
+    let option = {} as Appointment;
+
+    if (date != null) {
+      let formatDate = new DateTimeService().parseDate(date);
+
+      if (formatDate != null) {
+        option.appointmentTime = formatDate;
+      }
+    }
+
+    if (status != null) {
+      option.status = status;
+    }
+
     const appointments = await this.appointmentRepository.findAll(
       clinicId,
-      date,
-      status,
+      option,
     );
 
     // Transform domain entities to response DTOs

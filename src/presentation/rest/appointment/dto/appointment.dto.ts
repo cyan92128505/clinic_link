@@ -6,6 +6,7 @@ import {
   IsISO8601,
   IsUUID,
 } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import {
   AppointmentStatus,
   AppointmentSource,
@@ -41,11 +42,12 @@ export class CreateAppointmentDto {
 
   @ApiPropertyOptional({
     description: 'Appointment time',
-    example: '2023-12-31T14:30:00Z',
+    example: '2023-12-31T14:30:00+08:00',
   })
   @IsOptional()
   @IsISO8601()
-  appointmentTime?: string;
+  @Type(() => Date)
+  appointmentTime?: Date;
 
   @ApiProperty({
     description: 'Appointment source',
@@ -95,11 +97,39 @@ export class UpdateAppointmentDto {
 
   @ApiPropertyOptional({
     description: 'Appointment time',
-    example: '2023-12-31T14:30:00Z',
+    example: '2023-12-31T14:30:00+08:00',
   })
   @IsOptional()
   @IsISO8601()
-  appointmentTime?: string;
+  @Type(() => Date)
+  appointmentTime?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Check-in time',
+    example: '2023-12-31T14:25:00+08:00',
+  })
+  @IsOptional()
+  @IsISO8601()
+  @Type(() => Date)
+  checkinTime?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Start time',
+    example: '2023-12-31T14:35:00+08:00',
+  })
+  @IsOptional()
+  @IsISO8601()
+  @Type(() => Date)
+  startTime?: Date;
+
+  @ApiPropertyOptional({
+    description: 'End time',
+    example: '2023-12-31T14:50:00+08:00',
+  })
+  @IsOptional()
+  @IsISO8601()
+  @Type(() => Date)
+  endTime?: Date;
 
   @ApiPropertyOptional({
     description: 'Additional notes',
@@ -118,6 +148,15 @@ export class GetAppointmentsQueryDto {
   })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => {
+    // Validate and normalize date string
+    if (!value) return undefined;
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    if (datePattern.test(value)) {
+      return value;
+    }
+    throw new Error('Invalid date format. Use YYYY-MM-DD');
+  })
   date?: string;
 
   @ApiPropertyOptional({
@@ -128,4 +167,52 @@ export class GetAppointmentsQueryDto {
   @IsOptional()
   @IsEnum(AppointmentStatus)
   status?: AppointmentStatus;
+
+  @ApiPropertyOptional({
+    description: 'Filter by date range start',
+    example: '2023-12-01',
+  })
+  @IsOptional()
+  @IsISO8601()
+  @Type(() => Date)
+  @Transform(({ value }) => {
+    // Transform to start of day in Taiwan timezone
+    if (!value) return undefined;
+    const date = new Date(value);
+    return new Date(date.setHours(0, 0, 0, 0));
+  })
+  startDate?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Filter by date range end',
+    example: '2023-12-31',
+  })
+  @IsOptional()
+  @IsISO8601()
+  @Type(() => Date)
+  @Transform(({ value }) => {
+    // Transform to end of day in Taiwan timezone
+    if (!value) return undefined;
+    const date = new Date(value);
+    return new Date(date.setHours(23, 59, 59, 999));
+  })
+  endDate?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Filter by doctor ID',
+    example: '123e4567-e89b-12d3-a456-426614174001',
+  })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  doctorId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by patient ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  patientId?: string;
 }

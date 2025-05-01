@@ -1,4 +1,4 @@
-import { EnumUtils } from 'src/utils/enum_utils';
+import { EnumUtils } from 'src/utils/enum/enum.utils';
 
 export enum Gender {
   MALE = 'MALE',

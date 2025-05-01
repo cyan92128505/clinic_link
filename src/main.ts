@@ -3,8 +3,12 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { DateTimeInterceptor } from './infrastructure/common/services/datetime.interceptor';
 
 async function bootstrap() {
+  // 設置應用程式時區
+  process.env.TZ = 'Asia/Taipei';
+
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
@@ -56,6 +60,8 @@ async function bootstrap() {
       },
     }),
   );
+
+  app.useGlobalInterceptors(app.get(DateTimeInterceptor));
 
   // Setup Swagger documentation
   const swaggerConfig = new DocumentBuilder()

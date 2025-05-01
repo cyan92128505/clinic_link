@@ -46,10 +46,8 @@ export class CreateAppointmentHandler {
 
     // Store the appointment
     try {
-      const createdAppointment = await this.appointmentRepository.create(
-        newAppointment,
-        clinicId,
-      );
+      const createdAppointment =
+        await this.appointmentRepository.create(newAppointment);
       return new CreateAppointmentResponse(createdAppointment);
     } catch (error) {
       this.logger.error(
