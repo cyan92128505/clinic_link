@@ -1,0 +1,272 @@
+// Clinic Management System Database Schema
+
+Project clinic_management {
+  database_type: 'PostgreSQL'
+  Note: 'Comprehensive clinic management system database schema'
+}
+
+// Enums
+Enum role {
+  ADMIN [note: 'System administrator']
+  CLINIC_ADMIN [note: 'Clinic administrator']
+  DOCTOR [note: 'Doctor']
+  NURSE [note: 'Nurse']
+  STAFF [note: 'General staff']
+  RECEPTIONIST [note: 'Front desk receptionist']
+}
+
+Enum gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+Enum room_status {
+  OPEN [note: 'Room is open for appointments']
+  PAUSED [note: 'Temporarily paused']
+  CLOSED [note: 'Room is closed']
+}
+
+Enum appointment_status {
+  SCHEDULED [note: 'Scheduled appointment']
+  CHECKED_IN [note: 'Patient has checked in']
+  IN_PROGRESS [note: 'Currently in progress']
+  COMPLETED [note: 'Completed appointment']
+  CANCELLED [note: 'Cancelled appointment']
+  NO_SHOW [note: 'Patient didn\'t show up']
+}
+
+Enum appointment_source {
+  WALK_IN [note: 'Walk-in registration']
+  PHONE [note: 'Phone reservation']
+  ONLINE [note: 'Online reservation']
+  LINE [note: 'LINE app reservation']
+  APP [note: 'Mobile app reservation']
+}
+
+// Tables
+Table clinics {
+  id varchar [pk, note: 'cuid']
+  name varchar [not null]
+  address varchar [not null]
+  phone varchar [not null]
+  email varchar
+  logo varchar
+  settings jsonb [note: 'Clinic settings like working hours, holidays']
+  created_at timestamp [default: `now()`, not null]
+  updated_at timestamp [default: `now()`, not null]
+  
+  Note: 'Main clinic information table'
+}
+
+Table users {
+  id varchar [pk, note: 'cuid']
+  email varchar [unique, not null]
+  password varchar [not null]
+  name varchar [not null]
+  phone varchar
+  avatar varchar
+  is_active boolean [default: true, not null]
+  last_login_at timestamp
+  created_at timestamp [default: `now()`, not null]
+  updated_at timestamp [default: `now()`, not null]
+  
+  Note: 'System users table'
+}
+
+Table user_clinics {
+  user_id varchar [not null]
+  clinic_id varchar [not null]
+  role role [default: 'STAFF', not null]
+  created_at timestamp [default: `now()`, not null]
+  updated_at timestamp [default: `now()`, not null]
+  
+  indexes {
+    (user_id, clinic_id) [pk]
+  }
+  
+  Note: 'Associates users with clinics and their roles'
+}
+
+Table patients {
+  id varchar [pk, note: 'cuid']
+  clinic_id varchar [not null]
+  national_id varchar
+  name varchar [not null]
+  birth_date timestamp
+  gender gender
+  phone varchar [not null]
+  email varchar
+  address varchar
+  emergency_contact varchar
+  emergency_phone varchar
+  medical_history jsonb
+  note varchar
+  created_at timestamp [default: `now()`, not null]
+  updated_at timestamp [default: `now()`, not null]
+  
+  indexes {
+    (clinic_id, national_id) [unique]
+    (clinic_id, phone)
+    (clinic_id, name)
+  }
+  
+  Note: 'Patient information table'
+}
+
+Table departments {
+  id varchar [pk, note: 'cuid']
+  clinic_id varchar [not null]
+  name varchar [not null]
+  description varchar
+  color varchar [note: 'For frontend display']
+  created_at timestamp [default: `now()`, not null]
+  updated_at timestamp [default: `now()`, not null]
+  
+  indexes {
+    (clinic_id, name) [unique]
+  }
+  
+  Note: 'Hospital departments table'
+}
+
+Table doctors {
+  id varchar [pk, note: 'cuid']
+  clinic_id varchar [not null]
+  department_id varchar [not null]
+  user_id varchar [note: 'If doctor is also a system user']
+  name varchar [not null]
+  title varchar
+  specialty varchar
+  license_number varchar
+  bio varchar
+  avatar varchar
+  schedule_data jsonb [note: 'Doctor scheduling data']
+  created_at timestamp [default: `now()`, not null]
+  updated_at timestamp [default: `now()`, not null]
+  
+  indexes {
+    (clinic_id, name)
+  }
+  
+  Note: 'Doctor information table'
+}
+
+Table rooms {
+  id varchar [pk, note: 'cuid']
+  clinic_id varchar [not null]
+  name varchar [not null]
+  description varchar
+  status room_status [default: 'CLOSED', not null]
+  created_at timestamp [default: `now()`, not null]
+  updated_at timestamp [default: `now()`, not null]
+  
+  indexes {
+    (clinic_id, name) [unique]
+  }
+  
+  Note: 'Examination rooms table'
+}
+
+Table doctor_rooms {
+  doctor_id varchar [not null]
+  room_id varchar [not null]
+  created_at timestamp [default: `now()`, not null]
+  
+  indexes {
+    (doctor_id, room_id) [pk]
+  }
+  
+  Note: 'Associates doctors with rooms they can use'
+}
+
+Table appointments [headercolor: #3498db] {
+  id varchar [pk, note: 'cuid']
+  clinic_id varchar [not null]
+  patient_id varchar [not null]
+  doctor_id varchar
+  room_id varchar
+  appointment_number int [note: '看診號碼']
+  appointment_time timestamp [note: '預約時間']
+  checkin_time timestamp [note: '報到時間']
+  start_time timestamp [note: '開始看診時間']
+  end_time timestamp [note: '結束看診時間']
+  status appointment_status [default: 'SCHEDULED', not null]
+  source appointment_source [default: 'WALK_IN', not null]
+  note varchar
+  created_at timestamp [default: `now()`, not null]
+  updated_at timestamp [default: `now()`, not null]
+  
+  indexes {
+    (id, clinic_id) [unique]
+    (clinic_id, status)
+    (clinic_id, appointment_time)
+    (patient_id, status)
+  }
+  
+  Note: 'Appointment records table'
+}
+
+Table activity_logs {
+  id varchar [pk, note: 'cuid']
+  clinic_id varchar [not null]
+  user_id varchar [not null]
+  action varchar [not null]
+  resource varchar [not null]
+  resource_id varchar
+  details jsonb
+  ip_address varchar
+  user_agent varchar
+  created_at timestamp [default: `now()`, not null]
+  
+  indexes {
+    (clinic_id, created_at)
+    (user_id, created_at)
+  }
+  
+  Note: 'System activity audit logs'
+}
+
+// Relationships
+Ref: user_clinics.user_id > users.id [delete: cascade]
+Ref: user_clinics.clinic_id > clinics.id [delete: cascade]
+
+Ref: patients.clinic_id > clinics.id [delete: cascade]
+
+Ref: departments.clinic_id > clinics.id [delete: cascade]
+
+Ref: doctors.clinic_id > clinics.id [delete: cascade]
+Ref: doctors.department_id > departments.id
+
+Ref: rooms.clinic_id > clinics.id [delete: cascade]
+
+Ref: doctor_rooms.doctor_id > doctors.id [delete: cascade]
+Ref: doctor_rooms.room_id > rooms.id [delete: cascade]
+
+Ref: appointments.clinic_id > clinics.id [delete: cascade]
+Ref: appointments.patient_id > patients.id [delete: cascade]
+Ref: appointments.doctor_id > doctors.id
+Ref: appointments.room_id > rooms.id
+
+Ref: activity_logs.clinic_id > clinics.id [delete: cascade]
+Ref: activity_logs.user_id > users.id [delete: cascade]
+
+// Table Groups for visualization
+TableGroup clinic_core {
+  clinics
+  departments
+  rooms
+  doctors
+  doctor_rooms
+}
+
+TableGroup user_management {
+  users
+  user_clinics
+  activity_logs
+}
+
+TableGroup patient_care {
+  patients
+  appointments
+}

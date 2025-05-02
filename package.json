@@ -21,7 +21,13 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "dbml:generate": "ts-node scripts/dbml-to-drizzle.ts",
+    "dbml:diagram": "dbml-renderer -i schema.dbml -o docs/schema.png",
+    "db:generate": "npm run dbml:generate && drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.0",
@@ -39,7 +45,9 @@
     "class-validator": "^0.14.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
+    "drizzle-orm": "^0.43.1",
     "firebase-admin": "^13.2.0",
+    "fs-extra": "^11.3.0",
     "mqtt": "^5.11.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -51,11 +59,13 @@
     "zod": "^3.24.3"
   },
   "devDependencies": {
+    "@dbml/core": "^3.13.1",
     "@nestjs/cli": "^11.0.6",
     "@nestjs/schematics": "^11.0.5",
     "@nestjs/testing": "^11.0.20",
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.1",
+    "@types/fs-extra": "^11.0.4",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.14.1",
     "@types/passport-jwt": "^4.0.1",
@@ -64,6 +74,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "@typescript-eslint/parser": "^8.31.0",
+    "drizzle-kit": "^0.31.0",
     "eslint": "^9.25.0",
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-prettier": "^5.2.6",
