@@ -6,7 +6,7 @@ export class CreateAppointmentCommand {
     public readonly patientId: string,
     public readonly doctorId?: string,
     public readonly departmentId?: string,
-    public readonly appointmentTime?: string,
+    public readonly appointmentTime?: Date,
     public readonly source: AppointmentSource = AppointmentSource.WALK_IN,
     public readonly note?: string,
   ) {}

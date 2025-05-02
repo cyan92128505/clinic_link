@@ -40,9 +40,10 @@
 #### 使用 Prisma Schema 定義
 
 ```prisma
-// schema.prisma
-generator client {
+
+client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -51,207 +52,209 @@ datasource db {
 }
 
 model Clinic {
-  id             String          @id @default(cuid())
-  name           String
-  address        String
-  phone          String
-  email          String?
-  logo           String?
-  settings       Json?           // 診所設定，如工作時間、休診日等
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  
-  // 關聯
-  users          UserClinic[]
-  patients       Patient[]
-  departments    Department[]
-  rooms          Room[]
-  doctors        Doctor[]
-  appointments   Appointment[]
-  activityLogs   ActivityLog[]
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  phone     String
+  email     String?
+  logo      String?
+  settings  Json? // Clinic settings like working hours, holidays
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users        UserClinic[]
+  patients     Patient[]
+  departments  Department[]
+  rooms        Room[]
+  doctors      Doctor[]
+  appointments Appointment[]
+  activityLogs ActivityLog[]
 }
 
 model User {
-  id             String          @id @default(cuid())
-  email          String          @unique
-  password       String
-  name           String
-  phone          String?
-  avatar         String?
-  isActive       Boolean         @default(true)
-  lastLoginAt    DateTime?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  
-  // 關聯
-  clinics        UserClinic[]
-  activityLogs   ActivityLog[]
+  id          String    @id @default(cuid())
+  email       String    @unique
+  password    String
+  name        String
+  phone       String?
+  avatar      String?
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  clinics      UserClinic[]
+  activityLogs ActivityLog[]
 }
 
 model UserClinic {
-  userId         String
-  clinicId       String
-  role           Role            @default(STAFF)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  
-  // 關聯
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clinic         Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  
+  userId    String
+  clinicId  String
+  role      Role     @default(STAFF)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
   @@id([userId, clinicId])
 }
 
 model Patient {
-  id             String          @id @default(cuid())
-  clinicId       String
-  nationalId     String?
-  name           String
-  birthDate      DateTime?
-  gender         Gender?
-  phone          String
-  email          String?
-  address        String?
+  id               String    @id @default(cuid())
+  clinicId         String
+  nationalId       String?
+  name             String
+  birthDate        DateTime?
+  gender           Gender?
+  phone            String
+  email            String?
+  address          String?
   emergencyContact String?
-  emergencyPhone String?
-  medicalHistory Json?
-  note           String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  
-  // 關聯
-  clinic         Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  appointments   Appointment[]
-  
+  emergencyPhone   String?
+  medicalHistory   Json?
+  note             String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
   @@unique([clinicId, nationalId])
   @@index([clinicId, phone])
   @@index([clinicId, name])
 }
 
 model Department {
-  id             String          @id @default(cuid())
-  clinicId       String
-  name           String
-  description    String?
-  color          String?         // 用於前端顯示的顏色
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  
-  // 關聯
-  clinic         Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  doctors        Doctor[]
-  
+  id          String   @id @default(cuid())
+  clinicId    String
+  name        String
+  description String?
+  color       String? // For frontend display
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  clinic  Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  doctors Doctor[]
+
   @@unique([clinicId, name])
 }
 
 model Doctor {
-  id             String          @id @default(cuid())
-  clinicId       String
-  departmentId   String
-  userId         String?         // 如果醫生同時是系統使用者
-  name           String
-  title          String?
-  specialty      String?
-  licenseNumber  String?
-  bio            String?
-  avatar         String?
-  scheduleData   Json?           // 醫生排班資料
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  
-  // 關聯
-  clinic         Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  department     Department      @relation(fields: [departmentId], references: [id])
-  appointments   Appointment[]
-  rooms          DoctorRoom[]
-  
+  id            String   @id @default(cuid())
+  clinicId      String
+  departmentId  String
+  userId        String? // If doctor is also a system user
+  name          String
+  title         String?
+  specialty     String?
+  licenseNumber String?
+  bio           String?
+  avatar        String?
+  scheduleData  Json? // Doctor scheduling data
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  department   Department    @relation(fields: [departmentId], references: [id])
+  appointments Appointment[]
+  rooms        DoctorRoom[]
+
   @@index([clinicId, name])
 }
 
 model Room {
-  id             String          @id @default(cuid())
-  clinicId       String
-  name           String
-  description    String?
-  status         RoomStatus      @default(CLOSED)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  
-  // 關聯
-  clinic         Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  doctors        DoctorRoom[]
-  appointments   Appointment[]
-  
+  id          String     @id @default(cuid())
+  clinicId    String
+  name        String
+  description String?
+  status      RoomStatus @default(CLOSED)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  doctors      DoctorRoom[]
+  appointments Appointment[]
+
   @@unique([clinicId, name])
 }
 
 model DoctorRoom {
-  doctorId       String
-  roomId         String
-  createdAt      DateTime        @default(now())
-  
-  // 關聯
-  doctor         Doctor          @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  room           Room            @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  
+  doctorId  String
+  roomId    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
   @@id([doctorId, roomId])
 }
 
 model Appointment {
-  id             String          @id @default(cuid())
-  clinicId       String
-  patientId      String
-  doctorId       String?
-  roomId         String?
-  appointmentNumber Int?         // 看診號碼
-  appointmentTime DateTime?      // 預約時間
-  checkinTime    DateTime?       // 報到時間
-  startTime      DateTime?       // 開始看診時間
-  endTime        DateTime?       // 結束看診時間
-  status         AppointmentStatus @default(SCHEDULED)
-  source         AppointmentSource @default(WALK_IN) // 預約來源
-  note           String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  
+  id                String            @id @default(cuid())
+  clinicId          String
+  patientId         String
+  doctorId          String?
+  roomId            String?
+  appointmentNumber Int? // 看診號碼
+  appointmentTime   DateTime? // 預約時間
+  checkinTime       DateTime? // 報到時間
+  startTime         DateTime? // 開始看診時間
+  endTime           DateTime? // 結束看診時間
+  status            AppointmentStatus @default(SCHEDULED)
+  source            AppointmentSource @default(WALK_IN)
+  note              String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
   // 關聯
-  clinic         Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  patient        Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor         Doctor?         @relation(fields: [doctorId], references: [id])
-  room           Room?           @relation(fields: [roomId], references: [id])
-  
+  clinic  Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor  Doctor? @relation(fields: [doctorId], references: [id])
+  room    Room?   @relation(fields: [roomId], references: [id])
+
+  @@unique([id, clinicId])
   @@index([clinicId, status])
   @@index([clinicId, appointmentTime])
   @@index([patientId, status])
+  @@map("appointments")
 }
 
 model ActivityLog {
-  id             String          @id @default(cuid())
-  clinicId       String
-  userId         String
-  action         String
-  resource       String
-  resourceId     String?
-  details        Json?
-  ipAddress      String?
-  userAgent      String?
-  createdAt      DateTime        @default(now())
-  
-  // 關聯
-  clinic         Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id         String   @id @default(cuid())
+  clinicId   String
+  userId     String
+  action     String
+  resource   String
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([clinicId, createdAt])
   @@index([userId, createdAt])
 }
 
 enum Role {
-  ADMIN          // 系統管理員
-  CLINIC_ADMIN   // 診所管理員
-  DOCTOR         // 醫生
-  NURSE          // 護士
-  STAFF          // 一般職員
-  RECEPTIONIST   // 前台接待
+  ADMIN // System administrator
+  CLINIC_ADMIN // Clinic administrator
+  DOCTOR // Doctor
+  NURSE // Nurse
+  STAFF // General staff
+  RECEPTIONIST // Front desk receptionist
 }
 
 enum Gender {
@@ -261,27 +264,28 @@ enum Gender {
 }
 
 enum RoomStatus {
-  OPEN           // 開診中
-  PAUSED         // 暫停看診
-  CLOSED         // 關診
+  OPEN // Room is open for appointments
+  PAUSED // Temporarily paused
+  CLOSED // Room is closed
 }
 
 enum AppointmentStatus {
-  SCHEDULED      // 已預約
-  CHECKED_IN     // 已報到
-  IN_PROGRESS    // 看診中
-  COMPLETED      // 已完成
-  CANCELLED      // 已取消
-  NO_SHOW        // 未到診
+  SCHEDULED // Scheduled appointment
+  CHECKED_IN // Patient has checked in
+  IN_PROGRESS // Currently in progress
+  COMPLETED // Completed appointment
+  CANCELLED // Cancelled appointment
+  NO_SHOW // Patient didn't show up
 }
 
 enum AppointmentSource {
-  WALK_IN        // 現場掛號
-  PHONE          // 電話預約
-  ONLINE         // 線上預約
-  LINE           // LINE預約
-  APP            // APP預約
+  WALK_IN // Walk-in registration
+  PHONE // Phone reservation
+  ONLINE // Online reservation
+  LINE // LINE app reservation
+  APP // Mobile app reservation
 }
+
 ```
 
 ## 後端 Clean Architecture 架構設計

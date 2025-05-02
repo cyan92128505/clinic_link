@@ -7,7 +7,7 @@ export class UpdateAppointmentCommand {
     public readonly status?: AppointmentStatus,
     public readonly doctorId?: string,
     public readonly roomId?: string,
-    public readonly appointmentTime?: string,
+    public readonly appointmentTime?: Date,
     public readonly note?: string,
   ) {}
 }

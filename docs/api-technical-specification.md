@@ -28,8 +28,6 @@ Health
         Check system health
 ```
 
-## 需要實作的 API
-
 ### 預約管理 API
 ```
 Appointments
@@ -43,6 +41,9 @@ Appointments
         /api/v1/appointments/{appointmentId}
         Update appointment status or details
 ```
+
+## 需要實作的 API
+
 
 ### 病患管理 API
 ```
