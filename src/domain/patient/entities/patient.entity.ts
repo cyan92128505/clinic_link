@@ -25,4 +25,20 @@ export class Patient extends BaseEntity {
     this.createdAt = props.createdAt || new Date();
     this.updatedAt = props.updatedAt || new Date();
   }
+
+  public getAge(): number | null {
+    if (!this.birthDate) return null;
+    const today = new Date();
+    let age = today.getFullYear() - this.birthDate.getFullYear();
+    const monthDiff = today.getMonth() - this.birthDate.getMonth();
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < this.birthDate.getDate())
+    ) {
+      age--;
+    }
+
+    return age;
+  }
 }
