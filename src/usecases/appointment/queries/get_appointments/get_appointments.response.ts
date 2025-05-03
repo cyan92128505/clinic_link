@@ -44,8 +44,8 @@ export class AppointmentResponse {
     this.status = appointment.status;
     this.source = appointment.source;
     this.note = appointment.note;
-    this.createdAt = appointment.createdAt.toISOString();
-    this.updatedAt = appointment.updatedAt.toISOString();
+    this.createdAt = appointment.createdAt?.toISOString() ?? '';
+    this.updatedAt = appointment.updatedAt?.toISOString() ?? '';
   }
 }
 

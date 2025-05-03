@@ -61,7 +61,7 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalInterceptors(app.get(DateTimeInterceptor));
+  // app.useGlobalInterceptors(app.get(DateTimeInterceptor));
 
   // Setup Swagger documentation
   const swaggerConfig = new DocumentBuilder()

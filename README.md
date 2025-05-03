@@ -17,7 +17,7 @@
 - **認證**：Firebase Auth + JWT 授權機制 + Auth Guards
 - **即時通訊**：MQTT協議
 - **MQTT Broker**：Mosquitto/EMQ X
-- **ORM**：Drizzle ORM
+- **ORM**：Prisma
 - **API 文件**：Swagger/OpenAPI
 - **架構模式**：Clean Architecture
 
@@ -37,280 +37,253 @@
 
 ### 主要實體
 
-#### Schema 定義
+#### 使用 Prisma Schema 定義
 
-```dbml
-// Clinic Management System Database Schema
+```prisma
 
-Project clinic_management {
-  database_type: 'PostgreSQL'
-  Note: 'Comprehensive clinic management system database schema'
+client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
 }
 
-// Enums
-Enum role {
-  ADMIN [note: 'System administrator']
-  CLINIC_ADMIN [note: 'Clinic administrator']
-  DOCTOR [note: 'Doctor']
-  NURSE [note: 'Nurse']
-  STAFF [note: 'General staff']
-  RECEPTIONIST [note: 'Front desk receptionist']
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-Enum gender {
+model Clinic {
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  phone     String
+  email     String?
+  logo      String?
+  settings  Json? // Clinic settings like working hours, holidays
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users        UserClinic[]
+  patients     Patient[]
+  departments  Department[]
+  rooms        Room[]
+  doctors      Doctor[]
+  appointments Appointment[]
+  activityLogs ActivityLog[]
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  password    String
+  name        String
+  phone       String?
+  avatar      String?
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  clinics      UserClinic[]
+  activityLogs ActivityLog[]
+}
+
+model UserClinic {
+  userId    String
+  clinicId  String
+  role      Role     @default(STAFF)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@id([userId, clinicId])
+}
+
+model Patient {
+  id               String    @id @default(cuid())
+  clinicId         String
+  nationalId       String?
+  name             String
+  birthDate        DateTime?
+  gender           Gender?
+  phone            String
+  email            String?
+  address          String?
+  emergencyContact String?
+  emergencyPhone   String?
+  medicalHistory   Json?
+  note             String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@unique([clinicId, nationalId])
+  @@index([clinicId, phone])
+  @@index([clinicId, name])
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  clinicId    String
+  name        String
+  description String?
+  color       String? // For frontend display
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  clinic  Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  doctors Doctor[]
+
+  @@unique([clinicId, name])
+}
+
+model Doctor {
+  id            String   @id @default(cuid())
+  clinicId      String
+  departmentId  String
+  userId        String? // If doctor is also a system user
+  name          String
+  title         String?
+  specialty     String?
+  licenseNumber String?
+  bio           String?
+  avatar        String?
+  scheduleData  Json? // Doctor scheduling data
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  department   Department    @relation(fields: [departmentId], references: [id])
+  appointments Appointment[]
+  rooms        DoctorRoom[]
+
+  @@index([clinicId, name])
+}
+
+model Room {
+  id          String     @id @default(cuid())
+  clinicId    String
+  name        String
+  description String?
+  status      RoomStatus @default(CLOSED)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  doctors      DoctorRoom[]
+  appointments Appointment[]
+
+  @@unique([clinicId, name])
+}
+
+model DoctorRoom {
+  doctorId  String
+  roomId    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@id([doctorId, roomId])
+}
+
+model Appointment {
+  id                String            @id @default(cuid())
+  clinicId          String
+  patientId         String
+  doctorId          String?
+  roomId            String?
+  appointmentNumber Int? // 看診號碼
+  appointmentTime   DateTime? // 預約時間
+  checkinTime       DateTime? // 報到時間
+  startTime         DateTime? // 開始看診時間
+  endTime           DateTime? // 結束看診時間
+  status            AppointmentStatus @default(SCHEDULED)
+  source            AppointmentSource @default(WALK_IN)
+  note              String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // 關聯
+  clinic  Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor  Doctor? @relation(fields: [doctorId], references: [id])
+  room    Room?   @relation(fields: [roomId], references: [id])
+
+  @@unique([id, clinicId])
+  @@index([clinicId, status])
+  @@index([clinicId, appointmentTime])
+  @@index([patientId, status])
+  @@map("appointments")
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  clinicId   String
+  userId     String
+  action     String
+  resource   String
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId, createdAt])
+  @@index([userId, createdAt])
+}
+
+enum Role {
+  ADMIN // System administrator
+  CLINIC_ADMIN // Clinic administrator
+  DOCTOR // Doctor
+  NURSE // Nurse
+  STAFF // General staff
+  RECEPTIONIST // Front desk receptionist
+}
+
+enum Gender {
   MALE
   FEMALE
   OTHER
 }
 
-Enum room_status {
-  OPEN [note: 'Room is open for appointments']
-  PAUSED [note: 'Temporarily paused']
-  CLOSED [note: 'Room is closed']
+enum RoomStatus {
+  OPEN // Room is open for appointments
+  PAUSED // Temporarily paused
+  CLOSED // Room is closed
 }
 
-Enum appointment_status {
-  SCHEDULED [note: 'Scheduled appointment']
-  CHECKED_IN [note: 'Patient has checked in']
-  IN_PROGRESS [note: 'Currently in progress']
-  COMPLETED [note: 'Completed appointment']
-  CANCELLED [note: 'Cancelled appointment']
-  NO_SHOW [note: 'Patient didn\'t show up']
+enum AppointmentStatus {
+  SCHEDULED // Scheduled appointment
+  CHECKED_IN // Patient has checked in
+  IN_PROGRESS // Currently in progress
+  COMPLETED // Completed appointment
+  CANCELLED // Cancelled appointment
+  NO_SHOW // Patient didn't show up
 }
 
-Enum appointment_source {
-  WALK_IN [note: 'Walk-in registration']
-  PHONE [note: 'Phone reservation']
-  ONLINE [note: 'Online reservation']
-  LINE [note: 'LINE app reservation']
-  APP [note: 'Mobile app reservation']
-}
-
-// Tables
-Table clinics {
-  id varchar [pk, note: 'cuid']
-  name varchar [not null]
-  address varchar [not null]
-  phone varchar [not null]
-  email varchar
-  logo varchar
-  settings jsonb [note: 'Clinic settings like working hours, holidays']
-  created_at timestamp [default: `now()`, not null]
-  updated_at timestamp [default: `now()`, not null]
-  
-  Note: 'Main clinic information table'
-}
-
-Table users {
-  id varchar [pk, note: 'cuid']
-  email varchar [unique, not null]
-  password varchar [not null]
-  name varchar [not null]
-  phone varchar
-  avatar varchar
-  is_active boolean [default: true, not null]
-  last_login_at timestamp
-  created_at timestamp [default: `now()`, not null]
-  updated_at timestamp [default: `now()`, not null]
-  
-  Note: 'System users table'
-}
-
-Table user_clinics {
-  user_id varchar [not null]
-  clinic_id varchar [not null]
-  role role [default: 'STAFF', not null]
-  created_at timestamp [default: `now()`, not null]
-  updated_at timestamp [default: `now()`, not null]
-  
-  indexes {
-    (user_id, clinic_id) [pk]
-  }
-  
-  Note: 'Associates users with clinics and their roles'
-}
-
-Table patients {
-  id varchar [pk, note: 'cuid']
-  clinic_id varchar [not null]
-  national_id varchar
-  name varchar [not null]
-  birth_date timestamp
-  gender gender
-  phone varchar [not null]
-  email varchar
-  address varchar
-  emergency_contact varchar
-  emergency_phone varchar
-  medical_history jsonb
-  note varchar
-  created_at timestamp [default: `now()`, not null]
-  updated_at timestamp [default: `now()`, not null]
-  
-  indexes {
-    (clinic_id, national_id) [unique]
-    (clinic_id, phone)
-    (clinic_id, name)
-  }
-  
-  Note: 'Patient information table'
-}
-
-Table departments {
-  id varchar [pk, note: 'cuid']
-  clinic_id varchar [not null]
-  name varchar [not null]
-  description varchar
-  color varchar [note: 'For frontend display']
-  created_at timestamp [default: `now()`, not null]
-  updated_at timestamp [default: `now()`, not null]
-  
-  indexes {
-    (clinic_id, name) [unique]
-  }
-  
-  Note: 'Hospital departments table'
-}
-
-Table doctors {
-  id varchar [pk, note: 'cuid']
-  clinic_id varchar [not null]
-  department_id varchar [not null]
-  user_id varchar [note: 'If doctor is also a system user']
-  name varchar [not null]
-  title varchar
-  specialty varchar
-  license_number varchar
-  bio varchar
-  avatar varchar
-  schedule_data jsonb [note: 'Doctor scheduling data']
-  created_at timestamp [default: `now()`, not null]
-  updated_at timestamp [default: `now()`, not null]
-  
-  indexes {
-    (clinic_id, name)
-  }
-  
-  Note: 'Doctor information table'
-}
-
-Table rooms {
-  id varchar [pk, note: 'cuid']
-  clinic_id varchar [not null]
-  name varchar [not null]
-  description varchar
-  status room_status [default: 'CLOSED', not null]
-  created_at timestamp [default: `now()`, not null]
-  updated_at timestamp [default: `now()`, not null]
-  
-  indexes {
-    (clinic_id, name) [unique]
-  }
-  
-  Note: 'Examination rooms table'
-}
-
-Table doctor_rooms {
-  doctor_id varchar [not null]
-  room_id varchar [not null]
-  created_at timestamp [default: `now()`, not null]
-  
-  indexes {
-    (doctor_id, room_id) [pk]
-  }
-  
-  Note: 'Associates doctors with rooms they can use'
-}
-
-Table appointments [headercolor: #3498db] {
-  id varchar [pk, note: 'cuid']
-  clinic_id varchar [not null]
-  patient_id varchar [not null]
-  doctor_id varchar
-  room_id varchar
-  appointment_number int [note: '看診號碼']
-  appointment_time timestamp [note: '預約時間']
-  checkin_time timestamp [note: '報到時間']
-  start_time timestamp [note: '開始看診時間']
-  end_time timestamp [note: '結束看診時間']
-  status appointment_status [default: 'SCHEDULED', not null]
-  source appointment_source [default: 'WALK_IN', not null]
-  note varchar
-  created_at timestamp [default: `now()`, not null]
-  updated_at timestamp [default: `now()`, not null]
-  
-  indexes {
-    (id, clinic_id) [unique]
-    (clinic_id, status)
-    (clinic_id, appointment_time)
-    (patient_id, status)
-  }
-  
-  Note: 'Appointment records table'
-}
-
-Table activity_logs {
-  id varchar [pk, note: 'cuid']
-  clinic_id varchar [not null]
-  user_id varchar [not null]
-  action varchar [not null]
-  resource varchar [not null]
-  resource_id varchar
-  details jsonb
-  ip_address varchar
-  user_agent varchar
-  created_at timestamp [default: `now()`, not null]
-  
-  indexes {
-    (clinic_id, created_at)
-    (user_id, created_at)
-  }
-  
-  Note: 'System activity audit logs'
-}
-
-// Relationships
-Ref: user_clinics.user_id > users.id [delete: cascade]
-Ref: user_clinics.clinic_id > clinics.id [delete: cascade]
-
-Ref: patients.clinic_id > clinics.id [delete: cascade]
-
-Ref: departments.clinic_id > clinics.id [delete: cascade]
-
-Ref: doctors.clinic_id > clinics.id [delete: cascade]
-Ref: doctors.department_id > departments.id
-
-Ref: rooms.clinic_id > clinics.id [delete: cascade]
-
-Ref: doctor_rooms.doctor_id > doctors.id [delete: cascade]
-Ref: doctor_rooms.room_id > rooms.id [delete: cascade]
-
-Ref: appointments.clinic_id > clinics.id [delete: cascade]
-Ref: appointments.patient_id > patients.id [delete: cascade]
-Ref: appointments.doctor_id > doctors.id
-Ref: appointments.room_id > rooms.id
-
-Ref: activity_logs.clinic_id > clinics.id [delete: cascade]
-Ref: activity_logs.user_id > users.id [delete: cascade]
-
-// Table Groups for visualization
-TableGroup clinic_core {
-  clinics
-  departments
-  rooms
-  doctors
-  doctor_rooms
-}
-
-TableGroup user_management {
-  users
-  user_clinics
-  activity_logs
-}
-
-TableGroup patient_care {
-  patients
-  appointments
+enum AppointmentSource {
+  WALK_IN // Walk-in registration
+  PHONE // Phone reservation
+  ONLINE // Online reservation
+  LINE // LINE app reservation
+  APP // Mobile app reservation
 }
 
 ```
@@ -452,7 +425,7 @@ src/
 └── infrastructure/
     ├── common/                     # 通用基礎設施元素
     │   ├── database/               # 資料庫相關
-    │   │   └── drizzle/            # Drizzle ORM 設定
+    │   │   └── prisma/             # Prisma ORM 設定
     │   ├── services/               # 共用服務
     │   └── adapters/               # 外部服務適配器
     │
@@ -538,14 +511,14 @@ Clean Architecture 的核心原則是依賴規則，外層可以依賴內層，�
     // 將 Infrastructure 層實現注入到 Domain 層介面
     {
       provide: 'IAppointmentRepository',
-      useClass: DrizzleAppointmentRepository,
+      useClass: PrismaAppointmentRepository,
     },
     
     // 映射器
     AppointmentMapper,
     
     // 其他服務
-    DrizzleService,
+    PrismaService,
   ],
   controllers: [AppointmentsController],
 })
@@ -641,10 +614,10 @@ src/
 - **PostgreSQL**：作為唯一的持久化儲存
 
 ### 資料庫存取層
-- **Drizzle ORM**：作為唯一的資料庫存取層，處理所有資料庫操作
+- **Prisma ORM**：作為唯一的資料庫存取層，處理所有資料庫操作
 - **Repository 模式**：實現領域與資料存取的解耦
   - 定義抽象的 Repository 介面
-  - 使用 Drizzle 實現具體的 Repository
+  - 使用 Prisma 實現具體的 Repository
 
 ### Firebase/Supabase 與資料層的關係
 - **僅用於身分驗證**：Firebase/Supabase 僅作為身分提供者
@@ -716,10 +689,9 @@ src/
 
 ### 性能優化策略
 - **資料庫查詢優化**：
-  - 適當索引設計（參見 Drizzle Schema 中的 index 定義）
+  - 適當索引設計（參見 Prisma Schema 中的 @@index 定義）
   - 複雜查詢分析與優化
-  - 使用 Drizzle 的查詢建構器最佳化資料庫查詢
-  - 實現資料庫連接池管理
+  - 使用 Prisma 的查詢合併功能減少數據庫往返
 
 - **緩存策略**：
   - Redis 用於緩存頻繁訪問的數據（候診隊列、醫生排班）
@@ -730,7 +702,3 @@ src/
   - 實現組件懶加載
   - 使用 React.memo 和 useMemo 減少不必要的重渲染
   - 使用虛擬滾動處理大量數據顯示
-
-## 結語
-
-診所管理整合系統 Clinic Link 採用現代化的技術架構，透過 Clean Architecture 確保系統的可維護性和可擴展性。使用 Drizzle ORM 提供了型別安全的資料庫操作，配合 PostgreSQL 確保了資料的可靠性和效能。系統整合了即時通訊功能，提供多診所管理能力，並具備完整的測試策略，為診所提供一個高效、可靠的管理平台。

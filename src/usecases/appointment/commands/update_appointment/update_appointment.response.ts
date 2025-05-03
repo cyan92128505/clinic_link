@@ -32,6 +32,6 @@ export class UpdateAppointmentResponse {
     this.status = appointment.status;
     this.source = appointment.source;
     this.note = appointment.note;
-    this.updatedAt = appointment.updatedAt.toISOString();
+    this.updatedAt = appointment.updatedAt?.toISOString() ?? '';
   }
 }
