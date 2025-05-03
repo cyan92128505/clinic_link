@@ -1,53 +1,80 @@
+// src/presentation/rest/health/health.controller.ts
 import { Controller, Get } from '@nestjs/common';
 import {
   HealthCheck,
   HealthCheckService,
-  HttpHealthIndicator,
   HealthCheckResult,
-  DiskHealthIndicator,
-  MemoryHealthIndicator,
   PrismaHealthIndicator,
 } from '@nestjs/terminus';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../infrastructure/common/database/prisma/prisma.service';
 import { Public } from 'src/infrastructure/auth/decorators/public.decorator';
+import { Injectable } from '@nestjs/common';
 
-@ApiTags('Health')
-@Controller('health')
-export class HealthController {
+@Injectable()
+class CachedHealthService {
+  private lastCheck: { time: number; result: HealthCheckResult | null } = {
+    time: 0,
+    result: null,
+  };
+
+  private readonly CACHE_DURATION = 60000; // 1 minute cache
+
   constructor(
     private health: HealthCheckService,
-    private http: HttpHealthIndicator,
-    private disk: DiskHealthIndicator,
-    private memory: MemoryHealthIndicator,
     private prismaHealth: PrismaHealthIndicator,
     private prisma: PrismaService,
-    private configService: ConfigService,
   ) {}
 
-  @Get()
-  @Public() // Mark this endpoint as public (no authentication required)
-  @HealthCheck()
-  @ApiOperation({ summary: 'Check system health' })
-  @ApiResponse({ status: 200, description: 'The service is healthy' })
-  check(): Promise<HealthCheckResult> {
-    return this.health.check([
-      // Check if the application is running
-      () => this.http.pingCheck('app', 'http://localhost:3000'),
+  async getHealthStatus(): Promise<HealthCheckResult> {
+    const now = Date.now();
 
-      // Check the database connection using PrismaHealthIndicator
-      () => this.prismaHealth.pingCheck('database', this.prisma),
+    // Return cached result if available and not expired
+    if (
+      this.lastCheck.result &&
+      now - this.lastCheck.time < this.CACHE_DURATION
+    ) {
+      return this.lastCheck.result;
+    }
 
-      // Check disk storage
+    // Perform actual health check
+    const result = await this.health.check([
       () =>
-        this.disk.checkStorage('storage', {
-          path: '/',
-          thresholdPercent: 0.99,
+        this.prismaHealth.pingCheck('database', this.prisma, {
+          timeout: 3000,
         }),
-
-      // Check memory usage
-      () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024), // 300MB
     ]);
+
+    // Cache the result
+    this.lastCheck = { time: now, result };
+
+    return result;
+  }
+}
+
+@ApiTags('Health')
+@Controller()
+export class HealthController {
+  private cachedHealthService: CachedHealthService;
+
+  constructor(
+    health: HealthCheckService,
+    prismaHealth: PrismaHealthIndicator,
+    prisma: PrismaService,
+  ) {
+    this.cachedHealthService = new CachedHealthService(
+      health,
+      prismaHealth,
+      prisma,
+    );
+  }
+
+  @Get('/health')
+  @Public()
+  @HealthCheck()
+  @ApiOperation({ summary: 'Basic health check' })
+  @ApiResponse({ status: 200, description: 'The service is healthy' })
+  async check(): Promise<HealthCheckResult> {
+    return this.cachedHealthService.getHealthStatus();
   }
 }

@@ -8,11 +8,30 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor(private configService: ConfigService) {
+    const hideHealthCheckQueries =
+      configService.get('PRISMA_HIDE_HEALTH_CHECK_QUERIES') === 'true';
+    const connectionLimit = parseInt(
+      configService.get('PRISMA_CONNECTION_LIMIT', '5'),
+    );
+
     super({
+      datasources: {
+        db: {
+          url: configService.get('DATABASE_URL'),
+        },
+      },
       log:
         configService.get('NODE_ENV') === 'development'
-          ? ['query', 'info', 'warn', 'error']
-          : ['error'],
+          ? [
+              {
+                emit: hideHealthCheckQueries ? 'event' : 'stdout',
+                level: 'query',
+              },
+              { emit: 'stdout', level: 'info' },
+              { emit: 'stdout', level: 'warn' },
+              { emit: 'stdout', level: 'error' },
+            ]
+          : [configService.get('PRISMA_LOG_LEVEL', 'warn')],
     });
   }
 
@@ -20,6 +39,16 @@ export class PrismaService
    * Connect to the database when the module is initialized
    */
   async onModuleInit() {
+    if (this.configService.get('NODE_ENV') === 'development') {
+      // Only log slow queries in development
+      this.$on('query' as never, (e: any) => {
+        if (e.duration > 200) {
+          // Only log queries taking more than 200ms
+          console.log(`Slow query (${e.duration}ms): ${e.query}`);
+        }
+      });
+    }
+
     await this.$connect();
   }
 

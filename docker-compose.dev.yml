@@ -30,6 +30,13 @@ services:
       - clinic-network
     restart: unless-stopped
 
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/liveness']
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
   web:
     build:
       context: ./web
@@ -62,10 +69,11 @@ services:
     networks:
       - clinic-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
-      interval: 10s
-      timeout: 5s
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d clinic_management']
+      interval: 120s # Increased to 2 minutes
+      timeout: 10s
       retries: 5
+      start_period: 30s
 
   redis:
     image: redis:7-alpine

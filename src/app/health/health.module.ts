@@ -5,11 +5,7 @@ import { PrismaModule } from '../../infrastructure/common/database/prisma/prisma
 import { HealthController } from 'src/presentation/rest/health/health.controller';
 
 @Module({
-  imports: [
-    TerminusModule,
-    HttpModule,
-    PrismaModule, // Import PrismaModule to use PrismaService
-  ],
+  imports: [TerminusModule, HttpModule, PrismaModule],
   controllers: [HealthController],
 })
 export class HealthModule {}
