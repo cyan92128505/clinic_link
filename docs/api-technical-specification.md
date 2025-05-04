@@ -1,8 +1,8 @@
-# 診所管理系統 API 技術規格文件
+# 診所管理系統 API 技術規格文件（完整版）
 
-## 已實作的 API
+## 一、已實作的 API
 
-### 應用程式基礎 API
+### 1.1 應用程式基礎 API
 ```
 App
   GET /
@@ -10,7 +10,7 @@ App
     回應: 200 - Welcome information
 ```
 
-### 身分驗證 API
+### 1.2 身分驗證 API
 ```
 Authentication
   POST /api/v1/auth/login
@@ -69,7 +69,7 @@ Authentication
       403 - User does not have access to this clinic
 ```
 
-### 健康檢查 API
+### 1.3 健康檢查 API
 ```
 Health
   GET /health
@@ -78,23 +78,15 @@ Health
       200 - The Health Check is successful
         {
           "status": "ok",
-          "info": {
-            "database": {"status": "up"}
-          },
+          "info": { "database": {"status": "up"} },
           "error": {},
-          "details": {
-            "database": {"status": "up"}
-          }
+          "details": { "database": {"status": "up"} }
         }
       503 - The Health Check is not successful
         {
           "status": "error",
-          "info": {
-            "database": {"status": "up"}
-          },
-          "error": {
-            "redis": {"status": "down", "message": "Could not connect"}
-          },
+          "info": { "database": {"status": "up"} },
+          "error": { "redis": {"status": "down", "message": "Could not connect"} },
           "details": {
             "database": {"status": "up"},
             "redis": {"status": "down", "message": "Could not connect"}
@@ -102,7 +94,7 @@ Health
         }
 ```
 
-### 預約管理 API
+### 1.4 預約管理 API
 ```
 Appointments
   GET /api/v1/appointments
@@ -153,207 +145,402 @@ Appointments
       200 - Updates an existing appointment
 ```
 
-## 需要實作的 API
+## 二、需要實作的 API
 
-### 病患管理 API
+### 2.1 角色管理 API
 ```
-Patients
-  GET /api/v1/patients
-    描述: Get all patients or search by criteria
+Clinic Users Management
+  POST /api/v1/clinics/{clinicId}/users
+    描述: Add user to clinic
+    授權: Bearer Token + Role [ADMIN, CLINIC_ADMIN]
+    路徑參數:
+      - clinicId: string - Clinic ID
+    請求內容:
+      {
+        "userId": string,       // 必填
+        "role": string          // 必填 [ADMIN, CLINIC_ADMIN, DOCTOR, NURSE, STAFF, RECEPTIONIST]
+      }
+    回應:
+      201 - User added to clinic successfully
+      404 - Clinic or User not found
+      409 - User already exists in clinic
+
+  GET /api/v1/clinics/{clinicId}/users
+    描述: Get all users in clinic
+    授權: Bearer Token + Role [ADMIN, CLINIC_ADMIN]
+    路徑參數:
+      - clinicId: string - Clinic ID
+    回應:
+      200 - Returns list of users in clinic
+
+  PUT /api/v1/clinics/{clinicId}/users/{userId}/role
+    描述: Update user role in clinic
+    授權: Bearer Token + Role [ADMIN, CLINIC_ADMIN]
+    路徑參數:
+      - clinicId: string - Clinic ID
+      - userId: string - User ID
+    請求內容:
+      {
+        "role": string  // 必填 [ADMIN, CLINIC_ADMIN, DOCTOR, NURSE, STAFF, RECEPTIONIST]
+      }
+    回應:
+      200 - Role updated successfully
+      404 - User not found in clinic
+
+  DELETE /api/v1/clinics/{clinicId}/users/{userId}
+    描述: Remove user from clinic
+    授權: Bearer Token + Role [ADMIN, CLINIC_ADMIN]
+    路徑參數:
+      - clinicId: string - Clinic ID
+      - userId: string - User ID
+    回應:
+      204 - User removed successfully
+      404 - User not found in clinic
+
+User Clinics
+  GET /api/v1/users/me/clinics
+    描述: Get current user's clinics and roles
     授權: Bearer Token
+    回應:
+      200 - Returns list of user's clinics with roles
+
+  GET /api/v1/users/{userId}/clinics
+    描述: Get specific user's clinics
+    授權: Bearer Token + Role [ADMIN]
+    路徑參數:
+      - userId: string - User ID
+    回應:
+      200 - Returns list of user's clinics
+
+Roles Definition
+  GET /api/v1/roles
+    描述: Get all available roles
+    授權: Bearer Token
+    回應:
+      200 - Returns list of roles with descriptions
+```
+
+### 2.2 患者認證 API（支援多診所）
+```
+Patient Authentication
+  POST /api/v1/patient/auth/register
+    描述: Patient registration
+    請求內容:
+      {
+        "idToken": string,      // Firebase ID token, 必填
+        "name": string,         // 必填
+        "phone": string,        // 必填
+        "nationalId": string,   // 選填
+        "birthDate": date,      // 選填
+        "gender": string,       // 選填 [MALE, FEMALE, OTHER]
+        "email": string,        // 選填
+        "address": string       // 選填
+      }
+    回應:
+      201 - Registration successful
+      409 - Patient already exists
+
+  POST /api/v1/patient/auth/verify
+    描述: Verify Firebase token
+    請求內容:
+      {
+        "idToken": string      // Firebase ID token, 必填
+      }
+    回應:
+      200 - Token verified, returns JWT
+      401 - Invalid token
+
+  GET /api/v1/patient/auth/profile
+    描述: Get patient profile
+    授權: Bearer Token (Patient)
+    回應:
+      200 - Returns patient profile
+      401 - Unauthorized
+
+Patient Clinics Management
+  GET /api/v1/patient/clinics
+    描述: Get patient's linked clinics
+    授權: Bearer Token (Patient)
+    回應:
+      200 - Returns list of linked clinics
+
+  POST /api/v1/patient/clinics/{clinicId}/link
+    描述: Link patient to clinic
+    授權: Bearer Token (Patient)
+    路徑參數:
+      - clinicId: string - Clinic ID
+    請求內容:
+      {
+        "patientNumber": string  // 選填, clinic-specific patient number
+      }
+    回應:
+      201 - Link created successfully
+      404 - Clinic not found
+
+  GET /api/v1/patient/clinics/{clinicId}
+    描述: Get patient's information in specific clinic
+    授權: Bearer Token (Patient)
+    路徑參數:
+      - clinicId: string - Clinic ID
+    回應:
+      200 - Returns patient info in clinic
+      404 - Patient not linked to clinic
+
+Patient Appointments
+  GET /api/v1/patient/appointments
+    描述: Get patient's appointments
+    授權: Bearer Token (Patient)
     查詢參數:
-      - patientId: string - 病歷號碼
-      - name: string - 姓名
-      - phone: string - 電話
-    回應: 病患列表或單一病患資料
+      - clinicId: string - Filter by clinic (選填)
+    回應:
+      200 - Returns list of appointments
+
+  POST /api/v1/patient/appointments
+    描述: Create appointment (from patient app)
+    授權: Bearer Token (Patient)
+    請求內容:
+      {
+        "clinicId": string,        // 必填
+        "doctorId": string,        // 選填
+        "departmentId": string,    // 選填
+        "appointmentTime": datetime, // 選填
+        "note": string             // 選填
+      }
+    回應:
+      201 - Appointment created
+
+  GET /api/v1/patient/appointments/{id}
+    描述: Get appointment details
+    授權: Bearer Token (Patient)
+    路徑參數:
+      - id: string - Appointment ID
+    回應:
+      200 - Returns appointment details
+      404 - Appointment not found
+
+  PUT /api/v1/patient/appointments/{id}
+    描述: Update appointment
+    授權: Bearer Token (Patient)
+    路徑參數:
+      - id: string - Appointment ID
+    請求內容:
+      {
+        "appointmentTime": datetime,  // 選填
+        "note": string               // 選填
+      }
+    回應:
+      200 - Appointment updated
+      404 - Appointment not found
+
+  DELETE /api/v1/patient/appointments/{id}
+    描述: Cancel appointment
+    授權: Bearer Token (Patient)
+    路徑參數:
+      - id: string - Appointment ID
+    回應:
+      204 - Appointment cancelled
+      404 - Appointment not found
+
+Patient Medical Records
+  GET /api/v1/patient/clinics/{clinicId}/medical-records
+    描述: Get medical records in specific clinic
+    授權: Bearer Token (Patient)
+    路徑參數:
+      - clinicId: string - Clinic ID
+    回應:
+      200 - Returns medical records
+      404 - Patient not linked to clinic
+```
+
+### 2.3 診所內部管理 API
+```
+Patients Management (for Clinic Staff)
+  GET /api/v1/patients
+    描述: Get patients in current clinic
+    授權: Bearer Token + Clinic Context
+    查詢參數:
+      - search: string - Search by name, phone, or patient number
+      - page: number - Page number (default: 1)
+      - limit: number - Items per page (default: 20)
+    回應:
+      200 - Returns paginated list of patients
 
   POST /api/v1/patients
-    描述: Create a new patient
-    授權: Bearer Token
+    描述: Create new patient
+    授權: Bearer Token + Clinic Context
     請求內容:
       {
         "name": string,              // 必填
-        "nationalId": string,        // 選填
-        "birthDate": string,         // 選填
-        "gender": string,            // 選填 [MALE, FEMALE, OTHER]
         "phone": string,             // 必填
+        "nationalId": string,        // 選填
+        "birthDate": date,           // 選填
+        "gender": string,            // 選填 [MALE, FEMALE, OTHER]
         "email": string,             // 選填
         "address": string,           // 選填
         "emergencyContact": string,  // 選填
         "emergencyPhone": string,    // 選填
-        "medicalHistory": object,    // 選填
         "note": string              // 選填
       }
-    回應: 新建立的病患資料
+    回應:
+      201 - Patient created successfully
+
+  GET /api/v1/patients/{patientId}
+    描述: Get patient details
+    授權: Bearer Token + Clinic Context
+    路徑參數:
+      - patientId: string - Patient ID
+    回應:
+      200 - Returns patient details
+      404 - Patient not found
 
   PUT /api/v1/patients/{patientId}
     描述: Update patient information
-    授權: Bearer Token
+    授權: Bearer Token + Clinic Context
     路徑參數:
-      - patientId: string - 病歷號碼
-    請求內容: 更新的病患資料 (部分更新)
-    回應: 更新後的病患資料
-```
+      - patientId: string - Patient ID
+    請求內容: (all fields optional)
+    回應:
+      200 - Patient updated successfully
+      404 - Patient not found
 
-### 診間管理 API
-```
-Rooms
+Rooms Management
   GET /api/v1/rooms
     描述: Get all rooms with queue information
-    授權: Bearer Token
-    回應: 診間列表，包含候診人數和當前狀態
+    授權: Bearer Token + Clinic Context
+    回應:
+      200 - Returns list of rooms with status and queue
 
   PUT /api/v1/rooms/{roomId}
     描述: Update room status
-    授權: Bearer Token
+    授權: Bearer Token + Clinic Context
     路徑參數:
-      - roomId: string - 診間 ID
+      - roomId: string - Room ID
     請求內容:
       {
-        "isActive": boolean  // 開診或關診狀態
+        "status": string  // 必填 [OPEN, PAUSED, CLOSED]
       }
-    回應: 更新後的診間資料
-```
+    回應:
+      200 - Room status updated
+      404 - Room not found
 
-### 科別管理 API
-```
-Departments
+Departments Management
   GET /api/v1/departments
     描述: Get all departments
-    授權: Bearer Token
-    回應: 科別列表
-      [
-        {
-          "id": number,
-          "name": string,
-          "description": string,
-          "color": string
-        }
-      ]
-```
+    授權: Bearer Token + Clinic Context
+    回應:
+      200 - Returns list of departments
 
-### 醫生管理 API
-```
-Doctors
+Doctors Management
   GET /api/v1/doctors
     描述: Get all doctors
-    授權: Bearer Token
-    回應: 醫生列表
-      [
-        {
-          "id": number,
-          "fullName": string,
-          "departmentId": number,
-          "title": string,
-          "specialty": string
-        }
-      ]
-```
+    授權: Bearer Token + Clinic Context
+    查詢參數:
+      - departmentId: string - Filter by department (選填)
+    回應:
+      200 - Returns list of doctors
 
-### 活動日誌 API
-```
-ActivityLogs
+Activity Logs
   GET /api/v1/activity-logs
     描述: Get activity logs
-    授權: Bearer Token
+    授權: Bearer Token + Clinic Context + Role [ADMIN, CLINIC_ADMIN]
     查詢參數:
-      - limit: number - 最大回傳數量
-      - offset: number - 跳過的數量
-    回應: 活動日誌列表
-```
+      - startDate: datetime - Filter start date
+      - endDate: datetime - Filter end date
+      - userId: string - Filter by user
+      - action: string - Filter by action type
+      - page: number - Page number (default: 1)
+      - limit: number - Items per page (default: 50)
+    回應:
+      200 - Returns paginated activity logs
 
-### 統計數據 API
-```
 Statistics
   GET /api/v1/stats/dashboard
     描述: Get dashboard statistics
-    授權: Bearer Token
-    回應: 包含各種統計數據
-      {
-        "todayAppointments": number,      // 今日預約數
-        "waitingPatients": number,        // 等候中病患數
-        "completedAppointments": number,  // 已完成看診數
-        "cancelledAppointments": number   // 取消預約數
-      }
+    授權: Bearer Token + Clinic Context
+    查詢參數:
+      - date: date - Statistics for specific date (default: today)
+    回應:
+      200 - Returns dashboard statistics
+        {
+          "todayAppointments": number,
+          "waitingPatients": number,
+          "completedAppointments": number,
+          "cancelledAppointments": number,
+          "noShowAppointments": number,
+          "averageWaitTime": number,
+          "averageConsultationTime": number
+        }
 ```
 
-## API 通用規範
+## 三、API 規範與注意事項
 
-### 認證機制
-- 系統支援兩種認證方式：
-  - 傳統帳號密碼登入：使用 `/api/v1/auth/login`
-  - Firebase 認證：使用 `/api/v1/auth/firebase`
-- 所有需要身分驗證的 API 都需要在 Header 中加入：`Authorization: Bearer <JWT_TOKEN>`
+### 3.1 認證與授權
+- **內部使用者**：使用 JWT Token，透過 `/api/v1/auth/login` 或 `/api/v1/auth/firebase` 取得
+- **患者**：使用 Firebase Authentication + JWT Token，透過 `/api/v1/patient/auth/verify` 取得
+- **多診所上下文**：內部使用者需先選擇診所（`/api/v1/auth/select-clinic`）才能操作診所資料
+- **角色權限**：使用 Role-Based Access Control (RBAC)，某些 API 需要特定角色才能存取
 
-### 多診所管理
-- 使用者可以同時屬於多個診所
-- 需要透過 `/api/v1/auth/select-clinic` 選擇當前活動的診所
-- 選擇診所後，所有資料操作都會在該診所的上下文中執行
+### 3.2 錯誤回應格式
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "error": {
+    "fields": {
+      "email": "Invalid email format"
+    }
+  }
+}
+```
 
-### 資料格式
-- 所有日期時間格式使用 ISO 8601 標準
-- 所有 API 皆使用 JSON 格式作為請求和回應的內容類型
-- 空值處理：可選欄位若無值則不回傳，而非回傳 null
+### 3.3 分頁回應格式
+```json
+{
+  "data": [...],
+  "meta": {
+    "total": 100,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 5
+  }
+}
+```
 
-### 錯誤處理
-| 狀態碼 | 說明                                              |
-| ------ | ------------------------------------------------- |
-| 400    | Bad Request - 請求格式錯誤                        |
-| 401    | Unauthorized - 未授權                             |
-| 403    | Forbidden - 無權限                                |
-| 404    | Not Found - 資源不存在                            |
-| 409    | Conflict - 資源衝突                               |
-| 422    | Unprocessable Entity - 請求格式正確但含有邏輯錯誤 |
-| 500    | Internal Server Error - 伺服器錯誤                |
+### 3.4 日期時間格式
+- 所有日期時間使用 ISO 8601 格式
+- 時區處理：API 接受帶時區的時間，回應也包含時區資訊
 
-### 分頁機制
-- 使用 `limit` 和 `offset` 進行分頁
-- 預設 `limit` 為 20，最大值為 100
-- 回應包含總筆數資訊以利前端分頁
+### 3.5 資料驗證
+- 必填欄位在請求中必須提供
+- 電子郵件需符合標準格式
+- 電話號碼需符合台灣格式
+- 身分證字號需通過檢核邏輯
 
-### API 版本控制
-- 目前版本為 v1，所有 API 路徑都以 `/api/v1/` 開頭
-- 未來若有重大變更將發布新版本，舊版本將保持向後相容
+### 3.6 安全性考量
+- 所有 API 使用 HTTPS
+- 敏感資訊（如密碼）不會在回應中返回
+- 實作請求頻率限制（Rate Limiting）
+- 跨診所資料存取需要適當權限
 
-## 建議的實作優先順序
+## 四、實作優先順序
 
-根據系統核心功能及依賴關係，建議按以下順序實作：
+### Phase 1：基礎架構
+1. 角色管理 API
+2. 患者認證 API（支援多診所）
+3. 權限控制機制
 
-1. **基礎資料管理**（建立系統基本資料）
-   - GET /api/v1/departments
-   - GET /api/v1/doctors 
-   - GET /api/v1/patients
-   - POST /api/v1/patients
+### Phase 2：核心功能
+1. 患者管理 API（診所端）
+2. 診間管理 API
+3. 科別管理 API
+4. 醫生管理 API
 
-2. **診間管理**（支援看診流程）
-   - GET /api/v1/rooms
-   - PUT /api/v1/rooms/{roomId}
+### Phase 3：進階功能
+1. 患者預約管理 API（患者端）
+2. 活動日誌 API
+3. 統計儀表板 API
 
-3. **病患資料管理**（完整病患功能）
-   - PUT /api/v1/patients/{patientId}
-
-4. **統計與紀錄**（營運分析）
-   - GET /api/v1/stats/dashboard
-   - GET /api/v1/activity-logs
-
-## API 安全性考量
-
-1. **認證與授權**
-   - 所有 API 都需要經過身分驗證（除了登入和註冊）
-   - 使用 JWT token 進行狀態管理
-   - Token 有效期限設定為 24 小時
-
-2. **資料隔離**
-   - 所有資料操作都必須在診所上下文中進行
-   - 防止跨診所資料存取
-   - 使用者只能存取其有權限的診所資料
-
-3. **輸入驗證**
-   - 所有輸入資料都需要經過驗證
-   - 防止 SQL injection 和 XSS 攻擊
-   - 使用參數化查詢處理資料庫操作
-
-4. **敏感資訊保護**
-   - 病患個資需要加密儲存
-   - API 回應中避免包含敏感資訊
-   - 日誌中不記錄敏感資料
+### Phase 4：整合優化
+1. MQTT 即時通知整合
+2. 效能優化
+3. 監控與日誌系統
