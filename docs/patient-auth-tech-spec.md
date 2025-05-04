@@ -1,4 +1,4 @@
-# 診所管理系統角色與患者認證完整開發指南
+# 診所管理系統角色與患者認證完整開發指南（多診所架構）
 
 ## 一、系統現況分析
 
@@ -10,8 +10,12 @@
 
 ### 1.2 缺失功能
 - 角色管理 API
-- 患者認證系統
+- 患者認證系統（支援多診所）
 - 完整的權限控制機制
+
+### 1.3 架構問題
+- 目前患者模型限制一個患者只能屬於一個診所
+- 需要支援患者可以在多個診所就診的情境
 
 ## 二、角色管理系統開發
 
@@ -156,29 +160,24 @@ export class RolesGuard implements CanActivate {
 }
 ```
 
-## 三、患者認證系統開發
+## 三、多診所患者認證系統開發
 
 ### 3.1 架構設計決策
 
-採用 **Firebase Authentication** 作為患者認證方式，原因：
-1. 支援多種登入方式（手機、Email、社群登入）
-2. 處理複雜的認證邏輯
-3. 提供安全的 token 管理
-4. 支援 OTP 驗證
+1. **患者資料全域化**：患者基本資料在系統中唯一存在
+2. **診所特定資料隔離**：每個診所維護自己的病歷號碼和醫療記錄
+3. **Firebase 統一認證**：患者使用同一個 Firebase 帳號存取所有診所
 
 ### 3.2 資料庫修改
 
-**步驟 1: 更新 Patient Model**
+**步驟 1: 修改 Patient Model（移除 clinicId）**
 
 ```prisma
+// 修改 Patient 模型 - 移除 clinicId，變成全域患者
 model Patient {
   id                String    @id @default(cuid())
-  clinicId          String
-  // Firebase authentication fields
-  firebaseUid       String?   @unique  // Firebase UID
-  firebaseIdToken   String?   // 最近的 ID Token (optional)
-  // Existing fields
-  nationalId        String?
+  firebaseUid       String?   @unique
+  nationalId        String?   @unique  // 身分證字號（全國唯一）
   name              String
   birthDate         DateTime?
   gender            Gender?
@@ -187,19 +186,75 @@ model Patient {
   address           String?
   emergencyContact  String?
   emergencyPhone    String?
-  medicalHistory    Json?
-  note              String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   // Relations
-  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  appointments Appointment[]
-
-  @@unique([clinicId, nationalId])
-  @@index([clinicId, phone])
-  @@index([clinicId, name])
+  clinicPatients    PatientClinic[]  // 與診所的關聯
+  appointments      Appointment[]
+  
   @@index([firebaseUid])
+  @@index([nationalId])
+  @@index([phone])
+  @@index([name])
+}
+```
+
+**步驟 2: 建立 PatientClinic 關聯表**
+
+```prisma
+// 新增患者-診所關聯表
+model PatientClinic {
+  patientId         String
+  clinicId          String
+  patientNumber     String?   // 診所內的病歷號碼
+  medicalHistory    Json?     // 在此診所的病史
+  note              String?   // 診所特定備註
+  firstVisitDate    DateTime  @default(now())
+  lastVisitDate     DateTime  @default(now())
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinic            Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@id([patientId, clinicId])
+  @@unique([clinicId, patientNumber])  // 病歷號碼在診所內唯一
+  @@index([clinicId, isActive])
+}
+```
+
+**步驟 3: 更新相關模型**
+
+```prisma
+// 修改 Clinic 模型
+model Clinic {
+  id        String   @id @default(cuid())
+  // ... existing fields ...
+  
+  // Relations
+  users          UserClinic[]
+  patientClinics PatientClinic[]  // Changed from patients
+  departments    Department[]
+  rooms          Room[]
+  doctors        Doctor[]
+  appointments   Appointment[]
+  activityLogs   ActivityLog[]
+}
+
+// Appointment 模型保持不變（已經正確引用 Patient.id）
+model Appointment {
+  id                String            @id @default(cuid())
+  clinicId          String
+  patientId         String            // 關聯到全域患者
+  // ... other fields ...
+  
+  // Relations
+  clinic            Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  // ... other relations ...
 }
 ```
 
@@ -235,7 +290,7 @@ export class FirebaseAdminConfig {
 }
 ```
 
-**步驟 2: 患者認證服務**
+**步驟 2: 患者認證服務（支援多診所）**
 
 ```typescript
 // src/infrastructure/auth/services/patient-firebase-auth.service.ts
@@ -244,6 +299,8 @@ export class PatientFirebaseAuthService {
   constructor(
     @Inject('IPatientRepository')
     private readonly patientRepository: IPatientRepository,
+    @Inject('IPatientClinicRepository')
+    private readonly patientClinicRepository: IPatientClinicRepository,
     private readonly firebaseAdmin: auth.Auth,
   ) {}
 
@@ -271,7 +328,7 @@ export class PatientFirebaseAuthService {
     patientData: {
       name: string;
       phone: string;
-      clinicId: string;
+      nationalId?: string;
       birthDate?: Date;
       gender?: 'MALE' | 'FEMALE' | 'OTHER';
     },
@@ -279,13 +336,45 @@ export class PatientFirebaseAuthService {
     const decodedToken = await this.firebaseAdmin.verifyIdToken(idToken);
     const { uid, email } = decodedToken;
 
+    // Check if patient already exists
+    const existingPatient = await this.patientRepository.findByFirebaseUid(uid);
+    if (existingPatient) {
+      throw new ConflictException('Patient already registered');
+    }
+
     const patient = new Patient({
       ...patientData,
       firebaseUid: uid,
-      email: email || patientData.email,
+      email: email || undefined,
     });
 
     return await this.patientRepository.create(patient);
+  }
+
+  async linkPatientToClinic(
+    patientId: string,
+    clinicId: string,
+    patientNumber?: string,
+  ): Promise<PatientClinic> {
+    // Check if link already exists
+    const existingLink = await this.patientClinicRepository.findByPatientAndClinic(
+      patientId,
+      clinicId,
+    );
+
+    if (existingLink) {
+      return existingLink;
+    }
+
+    // Create new link
+    const patientClinic = new PatientClinic({
+      patientId,
+      clinicId,
+      patientNumber,
+      isActive: true,
+    });
+
+    return await this.patientClinicRepository.create(patientClinic);
   }
 }
 ```
@@ -314,13 +403,17 @@ export class PatientFirebaseAuthGuard implements CanActivate {
 }
 ```
 
-**步驟 4: 患者API Controllers**
+**步驟 4: 患者API Controllers（支援多診所）**
 
 ```typescript
 // src/presentation/rest/patient-auth/patient-auth.controller.ts
 @ApiTags('patient-auth')
 @Controller('patient/auth')
 export class PatientAuthController {
+  constructor(
+    private readonly patientFirebaseAuthService: PatientFirebaseAuthService,
+  ) {}
+
   @Post('register')
   async register(@Body() registerDto: PatientRegisterDto) {
     const { idToken, ...patientData } = registerDto;
@@ -334,18 +427,68 @@ export class PatientAuthController {
   }
 }
 
+// src/presentation/rest/patient/patient-clinics.controller.ts
+@ApiTags('patient-clinics')
+@Controller('patient/clinics')
+@UseGuards(PatientFirebaseAuthGuard)
+export class PatientClinicsController {
+  constructor(
+    private readonly patientClinicService: PatientClinicService,
+  ) {}
+
+  @Get()
+  async getMyClinics(@Req() req) {
+    return this.patientClinicService.getPatientClinics(req.patient.id);
+  }
+
+  @Post(':clinicId/link')
+  async linkToClinic(
+    @Req() req,
+    @Param('clinicId') clinicId: string,
+    @Body() dto: LinkToClinicDto,
+  ) {
+    return this.patientClinicService.linkPatientToClinic(
+      req.patient.id,
+      clinicId,
+      dto.patientNumber,
+    );
+  }
+}
+
 // src/presentation/rest/patient/patient-appointments.controller.ts
 @ApiTags('patient-appointments')
 @Controller('patient/appointments')
 @UseGuards(PatientFirebaseAuthGuard)
 export class PatientAppointmentsController {
+  constructor(
+    private readonly appointmentService: AppointmentService,
+    private readonly patientClinicService: PatientClinicService,
+  ) {}
+
   @Get()
-  async getMyAppointments(@Req() req) {
-    return this.appointmentService.getPatientAppointments(req.patient.id);
+  async getMyAppointments(
+    @Req() req,
+    @Query('clinicId') clinicId?: string,
+  ) {
+    if (clinicId) {
+      // Verify patient has access to this clinic
+      await this.patientClinicService.verifyPatientClinicAccess(req.patient.id, clinicId);
+      return this.appointmentService.getPatientAppointmentsByClinic(
+        req.patient.id,
+        clinicId,
+      );
+    }
+    return this.appointmentService.getAllPatientAppointments(req.patient.id);
   }
 
   @Post()
-  async createAppointment(@Req() req, @Body() dto: CreateAppointmentDto) {
+  async createAppointment(@Req() req, @Body() dto: CreatePatientAppointmentDto) {
+    // Ensure patient is linked to the clinic
+    await this.patientClinicService.linkPatientToClinic(
+      req.patient.id,
+      dto.clinicId,
+    );
+
     return this.appointmentService.createAppointment({
       ...dto,
       patientId: req.patient.id,
@@ -355,47 +498,100 @@ export class PatientAppointmentsController {
 }
 ```
 
-### 3.4 患者 API 清單
+### 3.4 患者 API 清單（支援多診所）
 
 ```typescript
 // 患者認證 APIs
-POST   /api/v1/patient/auth/register     // 患者註冊
-POST   /api/v1/patient/auth/verify       // 驗證 Firebase token
-GET    /api/v1/patient/auth/profile      // 取得患者資料
+POST   /api/v1/patient/auth/register              // 患者註冊
+POST   /api/v1/patient/auth/verify                // 驗證 Firebase token
+GET    /api/v1/patient/auth/profile               // 取得患者資料
 
-// 患者功能 APIs
-GET    /api/v1/patient/appointments      // 查看我的預約
-POST   /api/v1/patient/appointments      // 建立新預約
-GET    /api/v1/patient/appointments/:id  // 查看預約詳情
-PUT    /api/v1/patient/appointments/:id  // 更新預約
-DELETE /api/v1/patient/appointments/:id  // 取消預約
-GET    /api/v1/patient/medical-records   // 查看病歷 (未來功能)
+// 患者診所關聯 APIs
+GET    /api/v1/patient/clinics                    // 查看我去過的診所
+POST   /api/v1/patient/clinics/:clinicId/link     // 建立與診所的關聯
+GET    /api/v1/patient/clinics/:clinicId          // 查看在特定診所的資料
+
+// 患者預約 APIs（需指定診所）
+GET    /api/v1/patient/appointments               // 查看所有預約（可選診所篩選）
+POST   /api/v1/patient/appointments               // 建立新預約（需指定診所）
+GET    /api/v1/patient/appointments/:id           // 查看預約詳情
+PUT    /api/v1/patient/appointments/:id           // 更新預約
+DELETE /api/v1/patient/appointments/:id           // 取消預約
+
+// 患者病歷 APIs（診所限定）
+GET    /api/v1/patient/clinics/:clinicId/medical-records  // 查看在特定診所的病歷
+```
+
+### 3.5 DTO 定義
+
+```typescript
+// Patient registration (no clinic required)
+interface PatientRegisterDto {
+  idToken: string;
+  name: string;
+  phone: string;
+  nationalId?: string;
+  birthDate?: Date;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  email?: string;
+  address?: string;
+}
+
+// Link patient to clinic
+interface LinkToClinicDto {
+  patientNumber?: string;  // Optional clinic-specific patient number
+}
+
+// Create appointment (must specify clinic)
+interface CreatePatientAppointmentDto {
+  clinicId: string;        // Required
+  doctorId?: string;
+  departmentId?: string;
+  appointmentTime?: Date;
+  note?: string;
+}
+
+// Patient clinic info response
+interface PatientClinicInfoDto {
+  clinicId: string;
+  clinicName: string;
+  patientNumber?: string;
+  firstVisitDate: Date;
+  lastVisitDate: Date;
+  totalVisits: number;
+  isActive: boolean;
+}
 ```
 
 ## 四、實作優先順序建議
 
-### Phase 1: 基礎建設
-1. 設定 Firebase Admin SDK
-2. 更新 Prisma schema
+### Phase 1: 資料庫結構調整
+1. 更新 Prisma schema（支援多診所患者）
+2. 建立資料遷移腳本
 3. 執行資料庫遷移
 
-### Phase 2: 角色管理系統
+### Phase 2: 基礎建設
+1. 設定 Firebase Admin SDK
+2. 建立 Repository interfaces
+3. 實作 PatientClinic repository
+
+### Phase 3: 角色管理系統
 1. 實作角色管理 Use Cases
 2. 建立角色管理 API Controllers
 3. 實作 RolesGuard
 4. 測試角色權限控制
 
-### Phase 3: 患者認證系統
-1. 實作患者認證服務
+### Phase 4: 患者認證系統
+1. 實作患者認證服務（支援多診所）
 2. 建立患者認證 Guard
-3. 實作患者 API Controllers
-4. 整合前端 Firebase Auth
+3. 實作患者-診所關聯服務
+4. 建立患者 API Controllers
 
-### Phase 4: 整合測試
+### Phase 5: 整合測試
 1. 角色管理功能測試
 2. 患者認證流程測試
-3. 權限控制測試
-4. 跨系統整合測試
+3. 多診所患者管理測試
+4. 權限控制測試
 
 ## 五、安全性考量
 
@@ -407,12 +603,12 @@ GET    /api/v1/patient/medical-records   // 查看病歷 (未來功能)
 2. **授權控制**
    - 基於角色的存取控制 (RBAC)
    - 診所級別的資料隔離
-   - API 端點權限檢查
+   - 患者-診所關聯驗證
 
 3. **資料保護**
    - 患者資料加密
+   - 醫療記錄隔離（診所間不可存取）
    - 敏感資訊隱藏
-   - 活動日誌追蹤
 
 ## 六、前端整合指南
 
@@ -432,7 +628,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 ```
 
-### 6.2 患者認證流程
+### 6.2 患者認證流程（支援多診所）
 ```typescript
 // 手機號碼登入
 const signInWithPhone = async (phoneNumber: string) => {
@@ -448,47 +644,109 @@ const verifyOTP = async (confirmationResult, otp: string) => {
   return idToken;
 };
 
-// 患者註冊/登入
-const patientAuth = async (idToken: string) => {
-  const response = await fetch('/api/v1/patient/auth/verify', {
+// 患者註冊（不需要指定診所）
+const registerPatient = async (idToken: string, patientData: any) => {
+  const response = await fetch('/api/v1/patient/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ idToken }),
+    body: JSON.stringify({ idToken, ...patientData }),
+  });
+  return response.json();
+};
+
+// 取得患者的診所列表
+const getPatientClinics = async (token: string) => {
+  const response = await fetch('/api/v1/patient/clinics', {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+};
+
+// 建立預約（需指定診所）
+const createAppointment = async (token: string, appointmentData: any) => {
+  const response = await fetch('/api/v1/patient/appointments', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(appointmentData),
   });
   return response.json();
 };
 ```
 
-## 七、測試策略
+### 6.3 Flutter App 使用流程
+
+1. **首次註冊**
+   - 使用 Firebase 手機驗證
+   - 填寫基本資料（姓名、生日等）
+   - 不需要選擇診所
+
+2. **選擇診所**
+   - App 顯示附近的診所列表
+   - 患者選擇要預約的診所
+   - 如果是首次到該診所，自動建立關聯
+
+3. **預約掛號**
+   - 選擇診所 → 選擇科別 → 選擇醫生 → 選擇時間
+   - 系統自動處理患者與診所的關聯
+
+4. **就診記錄**
+   - 可以查看在所有診所的就診記錄
+   - 可以按診所分類檢視
+
+## 七、資料遷移計畫
+
+### 7.1 現有資料遷移步驟
+1. 備份現有資料庫
+2. 建立新的 PatientClinic 表
+3. 移轉現有患者資料：
+   ```sql
+   -- Create PatientClinic records from existing Patient data
+   INSERT INTO PatientClinic (patientId, clinicId, patientNumber, isActive, firstVisitDate, lastVisitDate)
+   SELECT id, clinicId, patientNumber, true, createdAt, updatedAt
+   FROM Patient;
+   ```
+4. 修改 Patient 表結構（移除 clinicId）
+5. 更新相關的 API 和業務邏輯
+6. 測試確保所有功能正常
+
+### 7.2 相容性考量
+- 確保新舊 API 在過渡期間都能正常運作
+- 提供資料移轉腳本給已部署的診所
+- 監控遷移過程，確保資料完整性
+
+## 八、測試策略
 
 1. **單元測試**
-   - Use Cases 測試
-   - Service 層測試
-   - Guard 測試
+   - 測試多診所患者管理邏輯
+   - 測試患者-診所關聯服務
+   - 測試權限控制邏輯
 
 2. **整合測試**
-   - API 端點測試
-   - 資料庫操作測試
-   - Firebase 整合測試
+   - 測試完整的患者註冊流程
+   - 測試跨診所預約功能
+   - 測試資料隔離機制
 
 3. **E2E 測試**
-   - 完整的使用者流程
-   - 患者認證流程
-   - 角色權限測試
+   - 模擬患者在多個診所就診的流程
+   - 測試診所端查看患者資料的權限
+   - 測試患者端查看多診所記錄
 
-## 八、監控與維護
+## 九、監控與維護
 
 1. **日誌記錄**
-   - 認證事件
-   - 角色變更
-   - API 存取記錄
+   - 記錄患者-診所關聯建立
+   - 記錄跨診所存取嘗試
+   - 記錄認證失敗事件
 
 2. **效能監控**
-   - API 回應時間
-   - 資料庫查詢效能
-   - Firebase 請求監控
+   - 監控多診所查詢效能
+   - 監控 Firebase 認證延遲
+   - 監控資料庫查詢效能
 
 3. **安全性審計**
-   - 定期權限檢查
-   - 異常登入偵測
-   - 資料存取審計
+   - 定期審查跨診所存取記錄
+   - 監控異常登入模式
+   - 追蹤敏感資料存取
