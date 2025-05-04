@@ -35,257 +35,410 @@
 
 ## 資料模型設計
 
-### 主要實體
+### 資料庫架構圖
 
-#### 使用 Prisma Schema 定義
+```mermaid
+erDiagram
+    User ||--o{ UserClinic : has
+    User ||--o{ ActivityLog : performs
+    Clinic ||--o{ UserClinic : has
+    Clinic ||--o{ PatientClinic : serves
+    Clinic ||--o{ Department : has
+    Clinic ||--o{ Room : has
+    Clinic ||--o{ Doctor : employs
+    Clinic ||--o{ Appointment : manages
+    Clinic ||--o{ ActivityLog : tracks
+    Patient ||--o{ PatientClinic : visits
+    Patient ||--o{ Appointment : makes
+    Department ||--o{ Doctor : contains
+    Doctor ||--o{ Appointment : handles
+    Doctor ||--o{ DoctorRoom : practices_in
+    Room ||--o{ DoctorRoom : assigned_to
+    Room ||--o{ Appointment : hosts
 
-```prisma
+    User {
+        String id PK
+        String email UK
+        String password
+        String name
+        String phone "nullable"
+        String avatar "nullable"
+        Boolean isActive
+        DateTime lastLoginAt "nullable"
+        DateTime createdAt
+        DateTime updatedAt
+    }
 
-client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
-}
+    Clinic {
+        String id PK
+        String name
+        String address
+        String phone
+        String email "nullable"
+        String logo "nullable"
+        Json settings "nullable"
+        DateTime createdAt
+        DateTime updatedAt
+    }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+    UserClinic {
+        String userId PK,FK
+        String clinicId PK,FK
+        Role role
+        DateTime createdAt
+        DateTime updatedAt
+    }
 
-model Clinic {
-  id        String   @id @default(cuid())
-  name      String
-  address   String
-  phone     String
-  email     String?
-  logo      String?
-  settings  Json? // Clinic settings like working hours, holidays
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    Patient {
+        String id PK
+        String firebaseUid UK "nullable"
+        String nationalId UK "nullable"
+        String name
+        DateTime birthDate "nullable"
+        Gender gender "nullable"
+        String phone
+        String email "nullable"
+        String address "nullable"
+        String emergencyContact "nullable"
+        String emergencyPhone "nullable"
+        DateTime createdAt
+        DateTime updatedAt
+    }
 
-  // Relations
-  users        UserClinic[]
-  patients     Patient[]
-  departments  Department[]
-  rooms        Room[]
-  doctors      Doctor[]
-  appointments Appointment[]
-  activityLogs ActivityLog[]
-}
+    PatientClinic {
+        String patientId PK,FK
+        String clinicId PK,FK
+        String patientNumber "nullable"
+        Json medicalHistory "nullable"
+        String note "nullable"
+        DateTime firstVisitDate
+        DateTime lastVisitDate
+        Boolean isActive
+        DateTime createdAt
+        DateTime updatedAt
+    }
 
-model User {
-  id          String    @id @default(cuid())
-  email       String    @unique
-  password    String
-  name        String
-  phone       String?
-  avatar      String?
-  isActive    Boolean   @default(true)
-  lastLoginAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+    Department {
+        String id PK
+        String clinicId FK
+        String name
+        String description "nullable"
+        String color "nullable"
+        DateTime createdAt
+        DateTime updatedAt
+    }
 
-  // Relations
-  clinics      UserClinic[]
-  activityLogs ActivityLog[]
-}
+    Doctor {
+        String id PK
+        String clinicId FK
+        String departmentId FK
+        String userId FK "nullable"
+        String name
+        String title "nullable"
+        String specialty "nullable"
+        String licenseNumber "nullable"
+        String bio "nullable"
+        String avatar "nullable"
+        Json scheduleData "nullable"
+        DateTime createdAt
+        DateTime updatedAt
+    }
 
-model UserClinic {
-  userId    String
-  clinicId  String
-  role      Role     @default(STAFF)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    Room {
+        String id PK
+        String clinicId FK
+        String name
+        String description "nullable"
+        RoomStatus status
+        DateTime createdAt
+        DateTime updatedAt
+    }
 
-  // Relations
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+    DoctorRoom {
+        String doctorId PK,FK
+        String roomId PK,FK
+        DateTime createdAt
+    }
 
-  @@id([userId, clinicId])
-}
+    Appointment {
+        String id PK
+        String clinicId FK
+        String patientId FK
+        String doctorId FK "nullable"
+        String roomId FK "nullable"
+        Int appointmentNumber "nullable"
+        DateTime appointmentTime "nullable"
+        DateTime checkinTime "nullable"
+        DateTime startTime "nullable"
+        DateTime endTime "nullable"
+        AppointmentStatus status
+        AppointmentSource source
+        String note "nullable"
+        DateTime createdAt
+        DateTime updatedAt
+    }
 
-model Patient {
-  id               String    @id @default(cuid())
-  clinicId         String
-  nationalId       String?
-  name             String
-  birthDate        DateTime?
-  gender           Gender?
-  phone            String
-  email            String?
-  address          String?
-  emergencyContact String?
-  emergencyPhone   String?
-  medicalHistory   Json?
-  note             String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+    ActivityLog {
+        String id PK
+        String clinicId FK
+        String userId FK
+        String action
+        String resource
+        String resourceId "nullable"
+        Json details "nullable"
+        String ipAddress "nullable"
+        String userAgent "nullable"
+        DateTime createdAt
+    }
+```
 
-  // Relations
-  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  appointments Appointment[]
+```mermaid
+classDiagram
+    class Role {
+        <<enumeration>>
+        ADMIN
+        CLINIC_ADMIN
+        DOCTOR
+        NURSE
+        STAFF
+        RECEPTIONIST
+    }
+    
+    class Gender {
+        <<enumeration>>
+        MALE
+        FEMALE
+        OTHER
+    }
+    
+    class RoomStatus {
+        <<enumeration>>
+        OPEN
+        PAUSED
+        CLOSED
+    }
+    
+    class AppointmentStatus {
+        <<enumeration>>
+        SCHEDULED
+        CHECKED_IN
+        IN_PROGRESS
+        COMPLETED
+        CANCELLED
+        NO_SHOW
+    }
+    
+    class AppointmentSource {
+        <<enumeration>>
+        WALK_IN
+        PHONE
+        ONLINE
+        LINE
+        APP
+    }
+```
 
-  @@unique([clinicId, nationalId])
-  @@index([clinicId, phone])
-  @@index([clinicId, name])
-}
+### Enum 類別圖
 
-model Department {
-  id          String   @id @default(cuid())
-  clinicId    String
-  name        String
-  description String?
-  color       String? // For frontend display
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+```mermaid
+classDiagram
+    class Role {
+        <<enumeration>>
+        ADMIN
+        CLINIC_ADMIN
+        DOCTOR
+        NURSE
+        STAFF
+        RECEPTIONIST
+    }
+    
+    class Gender {
+        <<enumeration>>
+        MALE
+        FEMALE
+        OTHER
+    }
+    
+    class RoomStatus {
+        <<enumeration>>
+        OPEN
+        PAUSED
+        CLOSED
+    }
+    
+    class AppointmentStatus {
+        <<enumeration>>
+        SCHEDULED
+        CHECKED_IN
+        IN_PROGRESS
+        COMPLETED
+        CANCELLED
+        NO_SHOW
+    }
+    
+    class AppointmentSource {
+        <<enumeration>>
+        WALK_IN
+        PHONE
+        ONLINE
+        LINE
+        APP
+    }
+```
 
-  // Relations
-  clinic  Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  doctors Doctor[]
+### 簡化版核心關係圖
 
-  @@unique([clinicId, name])
-}
+```mermaid
+erDiagram
+    Clinic ||--o{ User : "employs"
+    Clinic ||--o{ Patient : "serves"
+    Clinic ||--o{ Appointment : "manages"
+    User ||--o{ Appointment : "handles"
+    Patient ||--o{ Appointment : "makes"
+    
+    Clinic {
+        id PK
+        name
+        address
+    }
+    
+    User {
+        id PK
+        email UK
+        role
+    }
+    
+    Patient {
+        id PK
+        name
+        phone
+    }
+    
+    Appointment {
+        id PK
+        status
+        appointmentTime
+    }
+```
 
-model Doctor {
-  id            String   @id @default(cuid())
-  clinicId      String
-  departmentId  String
-  userId        String? // If doctor is also a system user
-  name          String
-  title         String?
-  specialty     String?
-  licenseNumber String?
-  bio           String?
-  avatar        String?
-  scheduleData  Json? // Doctor scheduling data
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+### 使用者與診所關係圖
 
-  // Relations
-  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  department   Department    @relation(fields: [departmentId], references: [id])
-  appointments Appointment[]
-  rooms        DoctorRoom[]
+```mermaid
+erDiagram
+    User ||--o{ UserClinic : "belongs to"
+    Clinic ||--o{ UserClinic : "has users"
+    
+    User {
+        String id PK
+        String email UK
+        String name
+    }
+    
+    Clinic {
+        String id PK
+        String name
+    }
+    
+    UserClinic {
+        String userId PK,FK
+        String clinicId PK,FK
+        Role role
+    }
+```
 
-  @@index([clinicId, name])
-}
+### 病患與診所關係圖
 
-model Room {
-  id          String     @id @default(cuid())
-  clinicId    String
-  name        String
-  description String?
-  status      RoomStatus @default(CLOSED)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+```mermaid
+erDiagram
+    Patient ||--o{ PatientClinic : "visits"
+    Clinic ||--o{ PatientClinic : "serves"
+    
+    Patient {
+        String id PK
+        String name
+        String nationalId UK
+    }
+    
+    Clinic {
+        String id PK
+        String name
+    }
+    
+    PatientClinic {
+        String patientId PK,FK
+        String clinicId PK,FK
+        String patientNumber
+        Boolean isActive
+    }
+```
 
-  // Relations
-  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  doctors      DoctorRoom[]
-  appointments Appointment[]
+### 預約系統關係圖
 
-  @@unique([clinicId, name])
-}
+```mermaid
+erDiagram
+    Appointment ||--o| Patient : "belongs to"
+    Appointment ||--o| Doctor : "assigned to"
+    Appointment ||--o| Room : "takes place in"
+    Appointment ||--o| Clinic : "managed by"
+    
+    Appointment {
+        String id PK
+        AppointmentStatus status
+        AppointmentSource source
+        DateTime appointmentTime
+    }
+    
+    Patient {
+        String id PK
+        String name
+    }
+    
+    Doctor {
+        String id PK
+        String name
+    }
+    
+    Room {
+        String id PK
+        String name
+        RoomStatus status
+    }
+    
+    Clinic {
+        String id PK
+        String name
+    }
+```
 
-model DoctorRoom {
-  doctorId  String
-  roomId    String
-  createdAt DateTime @default(now())
+### 醫生與診間關係圖
 
-  // Relations
-  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
-
-  @@id([doctorId, roomId])
-}
-
-model Appointment {
-  id                String            @id @default(cuid())
-  clinicId          String
-  patientId         String
-  doctorId          String?
-  roomId            String?
-  appointmentNumber Int? // 看診號碼
-  appointmentTime   DateTime? // 預約時間
-  checkinTime       DateTime? // 報到時間
-  startTime         DateTime? // 開始看診時間
-  endTime           DateTime? // 結束看診時間
-  status            AppointmentStatus @default(SCHEDULED)
-  source            AppointmentSource @default(WALK_IN)
-  note              String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-
-  // 關聯
-  clinic  Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor  Doctor? @relation(fields: [doctorId], references: [id])
-  room    Room?   @relation(fields: [roomId], references: [id])
-
-  @@unique([id, clinicId])
-  @@index([clinicId, status])
-  @@index([clinicId, appointmentTime])
-  @@index([patientId, status])
-  @@map("appointments")
-}
-
-model ActivityLog {
-  id         String   @id @default(cuid())
-  clinicId   String
-  userId     String
-  action     String
-  resource   String
-  resourceId String?
-  details    Json?
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
-
-  // Relations
-  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([clinicId, createdAt])
-  @@index([userId, createdAt])
-}
-
-enum Role {
-  ADMIN // System administrator
-  CLINIC_ADMIN // Clinic administrator
-  DOCTOR // Doctor
-  NURSE // Nurse
-  STAFF // General staff
-  RECEPTIONIST // Front desk receptionist
-}
-
-enum Gender {
-  MALE
-  FEMALE
-  OTHER
-}
-
-enum RoomStatus {
-  OPEN // Room is open for appointments
-  PAUSED // Temporarily paused
-  CLOSED // Room is closed
-}
-
-enum AppointmentStatus {
-  SCHEDULED // Scheduled appointment
-  CHECKED_IN // Patient has checked in
-  IN_PROGRESS // Currently in progress
-  COMPLETED // Completed appointment
-  CANCELLED // Cancelled appointment
-  NO_SHOW // Patient didn't show up
-}
-
-enum AppointmentSource {
-  WALK_IN // Walk-in registration
-  PHONE // Phone reservation
-  ONLINE // Online reservation
-  LINE // LINE app reservation
-  APP // Mobile app reservation
-}
-
+```mermaid
+erDiagram
+    Doctor ||--o{ DoctorRoom : "practices in"
+    Room ||--o{ DoctorRoom : "assigned to"
+    Doctor }o--|| Department : "belongs to"
+    
+    Doctor {
+        String id PK
+        String name
+        String departmentId FK
+    }
+    
+    Room {
+        String id PK
+        String name
+        RoomStatus status
+    }
+    
+    Department {
+        String id PK
+        String name
+    }
+    
+    DoctorRoom {
+        String doctorId PK,FK
+        String roomId PK,FK
+    }
 ```
 
 ## 後端 Clean Architecture 架構設計
@@ -643,6 +796,30 @@ src/
 - **使用者可屬於多家診所**：一個使用者可以在不同診所擔任不同角色
 - **診所上下文**：所有操作都在特定診所上下文中進行
 - **資料隔離**：不同診所的資料完全隔離
+
+## 患者管理架構
+
+### 多診所患者系統
+
+系統支援患者在多個診所就診的需求，採用以下設計：
+
+- **全域患者資料**：患者基本資料（姓名、生日、聯絡方式等）全系統共用
+- **診所特定資料**：每個診所可以維護自己的病歷號碼、病史記錄等
+- **Firebase 認證**：患者使用統一的 Firebase 帳號登入，可以存取所有相關診所的資料
+
+### 患者-診所關聯
+
+- 透過 `PatientClinic` 關聯表管理患者與診所的關係
+- 每個患者在不同診所可以有不同的病歷號碼
+- 保持醫療記錄的隱私性和資料隔離
+
+### 患者認證流程
+
+1. **Firebase 手機認證**：患者使用手機號碼進行 Firebase 認證
+2. **患者註冊**：首次使用時填寫基本資料，資料儲存在 PostgreSQL
+3. **診所關聯**：患者首次到診所就診時，自動建立與該診所的關聯
+4. **跨診所存取**：患者可以在 App 中查看和管理多個診所的就診記錄
+
 
 ## 測試策略與實踐
 

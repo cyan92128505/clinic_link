@@ -90,8 +90,8 @@ Table user_clinics {
 
 Table patients {
   id varchar [pk, note: 'cuid']
-  clinic_id varchar [not null]
-  national_id varchar
+  firebase_uid varchar [unique, note: 'Firebase authentication UID']
+  national_id varchar [unique, note: 'National ID is globally unique']
   name varchar [not null]
   birth_date timestamp
   gender gender
@@ -100,18 +100,38 @@ Table patients {
   address varchar
   emergency_contact varchar
   emergency_phone varchar
-  medical_history jsonb
-  note varchar
   created_at timestamp [default: `now()`, not null]
   updated_at timestamp [default: `now()`, not null]
   
   indexes {
-    (clinic_id, national_id) [unique]
-    (clinic_id, phone)
-    (clinic_id, name)
+    firebase_uid
+    national_id
+    phone
+    name
   }
   
-  Note: 'Patient information table'
+  Note: 'Global patient information table'
+}
+
+Table patient_clinics {
+  patient_id varchar [not null]
+  clinic_id varchar [not null]
+  patient_number varchar [note: 'Clinic-specific patient number']
+  medical_history jsonb [note: 'Clinic-specific medical history']
+  note varchar [note: 'Clinic-specific notes']
+  first_visit_date timestamp [default: `now()`, not null]
+  last_visit_date timestamp [default: `now()`, not null]
+  is_active boolean [default: true, not null]
+  created_at timestamp [default: `now()`, not null]
+  updated_at timestamp [default: `now()`, not null]
+  
+  indexes {
+    (patient_id, clinic_id) [pk]
+    (clinic_id, patient_number) [unique]
+    (clinic_id, is_active)
+  }
+  
+  Note: 'Associates patients with clinics and clinic-specific data'
 }
 
 Table departments {
@@ -231,7 +251,8 @@ Table activity_logs {
 Ref: user_clinics.user_id > users.id [delete: cascade]
 Ref: user_clinics.clinic_id > clinics.id [delete: cascade]
 
-Ref: patients.clinic_id > clinics.id [delete: cascade]
+Ref: patient_clinics.patient_id > patients.id [delete: cascade]
+Ref: patient_clinics.clinic_id > clinics.id [delete: cascade]
 
 Ref: departments.clinic_id > clinics.id [delete: cascade]
 
@@ -268,5 +289,6 @@ TableGroup user_management {
 
 TableGroup patient_care {
   patients
+  patient_clinics
   appointments
 }
