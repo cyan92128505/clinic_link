@@ -297,27 +297,27 @@ erDiagram
     Patient ||--o{ Appointment : "makes"
     
     Clinic {
-        id PK
-        name
-        address
+        string id PK
+        string name
+        string address
     }
     
     User {
-        id PK
-        email UK
-        role
+        string id PK
+        string email UK
+        string role
     }
     
     Patient {
-        id PK
-        name
-        phone
+        string id PK
+        string name
+        string phone
     }
     
     Appointment {
-        id PK
-        status
-        appointmentTime
+        string id PK
+        string status
+        datetime appointmentTime
     }
 ```
 
