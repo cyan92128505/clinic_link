@@ -13,6 +13,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Logo } from './logo';
 
 type SidebarProps = {
   isOpen: boolean;
@@ -102,20 +103,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Logo and clinic name */}
         <div className="flex items-center p-4 border-b border-neutral-100">
           <div className="rounded-md bg-primary p-2 mr-3">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-              />
-            </svg>
+            <Logo className="text-white" />
           </div>
           <div>
             <h1 className="text-lg font-semibold text-neutral-800">
@@ -150,23 +138,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="p-4 border-t border-neutral-100">
           <div className="flex items-center">
             <div className="h-9 w-9 rounded-full bg-primary-light/30 flex items-center justify-center text-primary font-medium overflow-hidden">
-              {user?.profileImage ? (
+              {user?.avatar ? (
                 <img
-                  src={user.profileImage}
-                  alt={user.fullName}
+                  src={user.avatar}
+                  alt={user.name}
                   className="h-full w-full object-cover"
                 />
               ) : (
-                user?.fullName?.[0]?.toUpperCase() || 'U'
+                user?.name?.[0]?.toUpperCase() || 'U'
               )}
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-neutral-700">
-                {user?.fullName || '使用者'}
+                {user?.name || '使用者'}
               </p>
-              <p className="text-xs text-neutral-500">
-                {user?.department || '員工'}
-              </p>
+              <p className="text-xs text-neutral-500">{'員工'}</p>
             </div>
             <button
               onClick={handleLogout}
