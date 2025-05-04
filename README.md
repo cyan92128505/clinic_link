@@ -57,138 +57,138 @@ erDiagram
     Room ||--o{ Appointment : hosts
 
     User {
-        String id PK
-        String email UK
-        String password
-        String name
-        String phone "nullable"
-        String avatar "nullable"
-        Boolean isActive
-        DateTime lastLoginAt "nullable"
-        DateTime createdAt
-        DateTime updatedAt
+        string id PK
+        string email UK
+        string password
+        string name
+        string phone
+        string avatar
+        boolean isActive
+        datetime lastLoginAt
+        datetime createdAt
+        datetime updatedAt
     }
 
     Clinic {
-        String id PK
-        String name
-        String address
-        String phone
-        String email "nullable"
-        String logo "nullable"
-        Json settings "nullable"
-        DateTime createdAt
-        DateTime updatedAt
+        string id PK
+        string name
+        string address
+        string phone
+        string email
+        string logo
+        json settings
+        datetime createdAt
+        datetime updatedAt
     }
 
     UserClinic {
-        String userId PK,FK
-        String clinicId PK,FK
-        Role role
-        DateTime createdAt
-        DateTime updatedAt
+        string userId PK,FK
+        string clinicId PK,FK
+        string role
+        datetime createdAt
+        datetime updatedAt
     }
 
     Patient {
-        String id PK
-        String firebaseUid UK "nullable"
-        String nationalId UK "nullable"
-        String name
-        DateTime birthDate "nullable"
-        Gender gender "nullable"
-        String phone
-        String email "nullable"
-        String address "nullable"
-        String emergencyContact "nullable"
-        String emergencyPhone "nullable"
-        DateTime createdAt
-        DateTime updatedAt
+        string id PK
+        string firebaseUid UK
+        string nationalId UK
+        string name
+        datetime birthDate
+        string gender
+        string phone
+        string email
+        string address
+        string emergencyContact
+        string emergencyPhone
+        datetime createdAt
+        datetime updatedAt
     }
 
     PatientClinic {
-        String patientId PK,FK
-        String clinicId PK,FK
-        String patientNumber "nullable"
-        Json medicalHistory "nullable"
-        String note "nullable"
-        DateTime firstVisitDate
-        DateTime lastVisitDate
-        Boolean isActive
-        DateTime createdAt
-        DateTime updatedAt
+        string patientId PK,FK
+        string clinicId PK,FK
+        string patientNumber
+        json medicalHistory
+        string note
+        datetime firstVisitDate
+        datetime lastVisitDate
+        boolean isActive
+        datetime createdAt
+        datetime updatedAt
     }
 
     Department {
-        String id PK
-        String clinicId FK
-        String name
-        String description "nullable"
-        String color "nullable"
-        DateTime createdAt
-        DateTime updatedAt
+        string id PK
+        string clinicId FK
+        string name
+        string description
+        string color
+        datetime createdAt
+        datetime updatedAt
     }
 
     Doctor {
-        String id PK
-        String clinicId FK
-        String departmentId FK
-        String userId FK "nullable"
-        String name
-        String title "nullable"
-        String specialty "nullable"
-        String licenseNumber "nullable"
-        String bio "nullable"
-        String avatar "nullable"
-        Json scheduleData "nullable"
-        DateTime createdAt
-        DateTime updatedAt
+        string id PK
+        string clinicId FK
+        string departmentId FK
+        string userId FK
+        string name
+        string title
+        string specialty
+        string licenseNumber
+        string bio
+        string avatar
+        json scheduleData
+        datetime createdAt
+        datetime updatedAt
     }
 
     Room {
-        String id PK
-        String clinicId FK
-        String name
-        String description "nullable"
-        RoomStatus status
-        DateTime createdAt
-        DateTime updatedAt
+        string id PK
+        string clinicId FK
+        string name
+        string description
+        string status
+        datetime createdAt
+        datetime updatedAt
     }
 
     DoctorRoom {
-        String doctorId PK,FK
-        String roomId PK,FK
-        DateTime createdAt
+        string doctorId PK,FK
+        string roomId PK,FK
+        datetime createdAt
     }
 
     Appointment {
-        String id PK
-        String clinicId FK
-        String patientId FK
-        String doctorId FK "nullable"
-        String roomId FK "nullable"
-        Int appointmentNumber "nullable"
-        DateTime appointmentTime "nullable"
-        DateTime checkinTime "nullable"
-        DateTime startTime "nullable"
-        DateTime endTime "nullable"
-        AppointmentStatus status
-        AppointmentSource source
-        String note "nullable"
-        DateTime createdAt
-        DateTime updatedAt
+        string id PK
+        string clinicId FK
+        string patientId FK
+        string doctorId FK
+        string roomId FK
+        int appointmentNumber
+        datetime appointmentTime
+        datetime checkinTime
+        datetime startTime
+        datetime endTime
+        string status
+        string source
+        string note
+        datetime createdAt
+        datetime updatedAt
     }
 
     ActivityLog {
-        String id PK
-        String clinicId FK
-        String userId FK
-        String action
-        String resource
-        String resourceId "nullable"
-        Json details "nullable"
-        String ipAddress "nullable"
-        String userAgent "nullable"
-        DateTime createdAt
+        string id PK
+        string clinicId FK
+        string userId FK
+        string action
+        string resource
+        string resourceId
+        json details
+        string ipAddress
+        string userAgent
+        datetime createdAt
     }
 ```
 
