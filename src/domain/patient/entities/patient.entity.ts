@@ -2,7 +2,7 @@ import { BaseEntity } from 'src/domain/common/entities/base.entity';
 import { Gender } from '../value_objects/gender.enum';
 
 export class Patient extends BaseEntity {
-  clinicId: string;
+  firebaseUid?: string;
   nationalId?: string;
   name: string;
   birthDate?: Date;
@@ -12,8 +12,6 @@ export class Patient extends BaseEntity {
   address?: string;
   emergencyContact?: string;
   emergencyPhone?: string;
-  medicalHistory?: Record<string, any>;
-  note?: string;
 
   constructor(props: Partial<Patient>) {
     super({

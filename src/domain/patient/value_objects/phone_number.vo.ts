@@ -1,13 +1,18 @@
-export class PhoneNumber {
+export class PatientNumber {
   constructor(private readonly value: string) {
     this.validate();
   }
 
   private validate(): void {
-    // Taiwan phone number validation
-    const phoneRegex = /^(09\d{8}|0[2-8]\d{7,8})$/;
-    if (!phoneRegex.test(this.value)) {
-      throw new Error('Invalid phone number format');
+    // Patient number format validation (customizable per clinic)
+    if (!this.value || this.value.trim().length === 0) {
+      throw new Error('Patient number cannot be empty');
+    }
+
+    // Example: Accept alphanumeric characters and dashes
+    const patientNumberRegex = /^[A-Za-z0-9-]+$/;
+    if (!patientNumberRegex.test(this.value)) {
+      throw new Error('Invalid patient number format');
     }
   }
 

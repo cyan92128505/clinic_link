@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/database/prisma/prisma.service';
-import { IPatientRepository } from '../../../domain/patient/interfaces/patient.repository.interface';
-import { Patient } from '../../../domain/patient/entities/patient.entity';
-import { Gender } from '../../../domain/patient/value_objects/gender.enum';
+import { IPatientRepository } from 'src/domain/patient/interfaces/patient.repository.interface';
+import { Patient } from 'src/domain/patient/entities/patient.entity';
+import { Gender } from 'src/domain/patient/value_objects/gender.enum';
 
 @Injectable()
 export class PrismaPatientRepository implements IPatientRepository {
@@ -11,15 +11,12 @@ export class PrismaPatientRepository implements IPatientRepository {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Find all patients in a clinic with optional filters
+   * Find all patients with optional filters (no clinicId)
    */
-  async findAll(
-    clinicId: string,
-    filters?: Partial<Patient>,
-  ): Promise<Patient[]> {
+  async findAll(filters?: Partial<Patient>): Promise<Patient[]> {
     try {
       // Build the where condition
-      const where: any = { clinicId };
+      const where: any = {};
 
       // Add filters if provided
       if (filters) {
@@ -40,6 +37,12 @@ export class PrismaPatientRepository implements IPatientRepository {
             contains: filters.phone,
           };
         }
+        if (filters.email) {
+          where.email = {
+            contains: filters.email,
+            mode: 'insensitive',
+          };
+        }
       }
 
       const patients = await this.prisma.patient.findMany({
@@ -58,15 +61,12 @@ export class PrismaPatientRepository implements IPatientRepository {
   }
 
   /**
-   * Find patient by ID
+   * Find patient by ID (no clinicId)
    */
-  async findById(id: string, clinicId: string): Promise<Patient | null> {
+  async findById(id: string): Promise<Patient | null> {
     try {
-      const patient = await this.prisma.patient.findFirst({
-        where: {
-          id,
-          clinicId,
-        },
+      const patient = await this.prisma.patient.findUnique({
+        where: { id },
       });
 
       if (!patient) {
@@ -84,107 +84,35 @@ export class PrismaPatientRepository implements IPatientRepository {
   }
 
   /**
-   * Create a new patient
+   * Find patient by Firebase UID
    */
-  async create(patient: Patient): Promise<Patient> {
-    try {
-      const createdPatient = await this.prisma.patient.create({
-        data: {
-          id: patient.id,
-          clinicId: patient.clinicId,
-          nationalId: patient.nationalId,
-          name: patient.name,
-          birthDate: patient.birthDate,
-          gender: patient.gender,
-          phone: patient.phone,
-          email: patient.email,
-          address: patient.address,
-          emergencyContact: patient.emergencyContact,
-          emergencyPhone: patient.emergencyPhone,
-          medicalHistory: patient.medicalHistory as any,
-          note: patient.note,
-          createdAt: patient.createdAt,
-          updatedAt: patient.updatedAt,
-        },
-      });
-
-      return this.mapToDomainEntity(createdPatient);
-    } catch (error) {
-      this.logger.error(
-        `Error creating patient: ${error.message}`,
-        error.stack,
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Update an existing patient
-   */
-  async update(
-    id: string,
-    clinicId: string,
-    data: Partial<Patient>,
-  ): Promise<Patient> {
-    try {
-      // Cast medicalHistory to any for prisma JSON field if present
-      const updateData: any = { ...data };
-
-      const updatedPatient = await this.prisma.patient.update({
-        where: {
-          id,
-          clinicId,
-        },
-        data: updateData,
-      });
-
-      return this.mapToDomainEntity(updatedPatient);
-    } catch (error) {
-      this.logger.error(
-        `Error updating patient: ${error.message}`,
-        error.stack,
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Delete a patient
-   */
-  async delete(id: string, clinicId: string): Promise<boolean> {
-    try {
-      const deletedPatient = await this.prisma.patient.delete({
-        where: {
-          id,
-          clinicId,
-        },
-      });
-
-      return deletedPatient != null;
-    } catch (error) {
-      this.logger.error(
-        `Error deleting patient: ${error.message}`,
-        error.stack,
-      );
-      return false;
-    }
-  }
-
-  /**
-   * Find patient by national ID
-   */
-  async findByNationalId(
-    clinicId: string,
-    nationalId: string,
-  ): Promise<Patient | null> {
+  async findByFirebaseUid(firebaseUid: string): Promise<Patient | null> {
     try {
       const patient = await this.prisma.patient.findUnique({
-        where: {
-          clinicId_nationalId: {
-            clinicId,
-            nationalId,
-          },
-        },
+        where: { firebaseUid },
+      });
+
+      if (!patient) {
+        return null;
+      }
+
+      return this.mapToDomainEntity(patient);
+    } catch (error) {
+      this.logger.error(
+        `Error finding patient by Firebase UID: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Find patient by national ID (globally unique)
+   */
+  async findByNationalId(nationalId: string): Promise<Patient | null> {
+    try {
+      const patient = await this.prisma.patient.findUnique({
+        where: { nationalId },
       });
 
       if (!patient) {
@@ -204,11 +132,10 @@ export class PrismaPatientRepository implements IPatientRepository {
   /**
    * Find patients by phone number
    */
-  async findByPhone(clinicId: string, phone: string): Promise<Patient[]> {
+  async findByPhone(phone: string): Promise<Patient[]> {
     try {
       const patients = await this.prisma.patient.findMany({
         where: {
-          clinicId,
           phone: {
             contains: phone,
           },
@@ -227,13 +154,12 @@ export class PrismaPatientRepository implements IPatientRepository {
   }
 
   /**
-   * Search patients by name, phone, or national ID
+   * Search patients by name, phone, national ID, or email
    */
-  async search(clinicId: string, query: string): Promise<Patient[]> {
+  async search(query: string): Promise<Patient[]> {
     try {
       const patients = await this.prisma.patient.findMany({
         where: {
-          clinicId,
           OR: [
             {
               name: {
@@ -260,6 +186,7 @@ export class PrismaPatientRepository implements IPatientRepository {
           ],
         },
         orderBy: [{ name: 'asc' }],
+        take: 50, // Limit results for performance
       });
 
       return patients.map((patient) => this.mapToDomainEntity(patient));
@@ -272,24 +199,115 @@ export class PrismaPatientRepository implements IPatientRepository {
     }
   }
 
-  // Helper method to map Prisma model to domain entity
+  /**
+   * Create a new patient
+   */
+  async create(patient: Patient): Promise<Patient> {
+    try {
+      const createdPatient = await this.prisma.patient.create({
+        data: {
+          id: patient.id,
+          firebaseUid: patient.firebaseUid,
+          nationalId: patient.nationalId,
+          name: patient.name,
+          birthDate: patient.birthDate,
+          gender: patient.gender,
+          phone: patient.phone,
+          email: patient.email,
+          address: patient.address,
+          emergencyContact: patient.emergencyContact,
+          emergencyPhone: patient.emergencyPhone,
+          createdAt: patient.createdAt,
+          updatedAt: patient.updatedAt,
+        },
+      });
+
+      return this.mapToDomainEntity(createdPatient);
+    } catch (error) {
+      this.logger.error(
+        `Error creating patient: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing patient
+   */
+  async update(id: string, data: Partial<Patient>): Promise<Patient> {
+    try {
+      const updateData: any = { ...data };
+
+      // Remove undefined fields
+      Object.keys(updateData).forEach((key) => {
+        if (updateData[key] === undefined) {
+          delete updateData[key];
+        }
+      });
+
+      updateData.updatedAt = new Date();
+
+      const updatedPatient = await this.prisma.patient.update({
+        where: { id },
+        data: updateData,
+      });
+
+      return this.mapToDomainEntity(updatedPatient);
+    } catch (error) {
+      this.logger.error(
+        `Error updating patient: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a patient
+   */
+  async delete(id: string): Promise<boolean> {
+    try {
+      await this.prisma.patient.delete({
+        where: { id },
+      });
+
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `Error deleting patient: ${error.message}`,
+        error.stack,
+      );
+
+      // If the error is because the patient doesn't exist, return false
+      if (error.code === 'P2025') {
+        return false;
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Helper method to map Prisma model to domain entity
+   */
   private mapToDomainEntity(prismaPatient: any): Patient {
     return new Patient({
       id: prismaPatient.id,
-      clinicId: prismaPatient.clinicId,
+      firebaseUid: prismaPatient.firebaseUid,
       nationalId: prismaPatient.nationalId,
       name: prismaPatient.name,
-      birthDate: prismaPatient.birthDate,
+      birthDate: prismaPatient.birthDate
+        ? new Date(prismaPatient.birthDate)
+        : undefined,
       gender: prismaPatient.gender as Gender,
       phone: prismaPatient.phone,
       email: prismaPatient.email,
       address: prismaPatient.address,
       emergencyContact: prismaPatient.emergencyContact,
       emergencyPhone: prismaPatient.emergencyPhone,
-      medicalHistory: prismaPatient.medicalHistory,
-      note: prismaPatient.note,
-      createdAt: prismaPatient.createdAt,
-      updatedAt: prismaPatient.updatedAt,
+      createdAt: new Date(prismaPatient.createdAt),
+      updatedAt: new Date(prismaPatient.updatedAt),
     });
   }
 }
