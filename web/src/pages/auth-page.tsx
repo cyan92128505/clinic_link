@@ -264,216 +264,225 @@ export default function AuthPage() {
               <TabsTrigger value="login">登入</TabsTrigger>
               <TabsTrigger value="register">註冊</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="login">
-              <Card className="border-0 shadow-none">
-                <CardHeader className="px-0 pt-0">
-                  <CardTitle className="text-2xl">歡迎回來</CardTitle>
-                  <CardDescription>請輸入您的信箱密碼登入系統</CardDescription>
-                </CardHeader>
-                <CardContent className="px-0">
-                  <Form {...loginForm}>
-                    <form
-                      onSubmit={loginForm.handleSubmit(onLoginSubmit)}
-                      className="space-y-4"
-                    >
-                      <FormField
-                        control={loginForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>電子郵件</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
-                                <Input
-                                  placeholder="輸入電子郵件"
-                                  className="pl-10"
-                                  {...field}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={loginForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>密碼</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Lock className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
-                                <Input
-                                  type="password"
-                                  placeholder="輸入密碼"
-                                  className="pl-10"
-                                  {...field}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button
-                        type="submit"
-                        className="w-full mt-6"
-                        disabled={loginMutation.isPending}
+            <div className="relative min-h-[480px]">
+              <TabsContent
+                value="login"
+                className="absolute inset-0 data-[state=inactive]:opacity-0 data-[state=inactive]:pointer-events-none transition-opacity duration-200"
+              >
+                <Card className="border-0 shadow-none">
+                  <CardHeader className="px-0 pt-0">
+                    <CardTitle className="text-2xl">歡迎回來</CardTitle>
+                    <CardDescription>
+                      請輸入您的信箱密碼登入系統
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0">
+                    <Form {...loginForm}>
+                      <form
+                        onSubmit={loginForm.handleSubmit(onLoginSubmit)}
+                        className="space-y-4"
                       >
-                        {loginMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
-                            登入中...
-                          </>
-                        ) : (
-                          '登入系統'
-                        )}
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-                <CardFooter className="px-0 pt-4 flex flex-col items-center border-t border-neutral-100">
-                  <p className="text-sm text-neutral-500">
-                    還沒有帳號？
-                    <Button
-                      variant="link"
-                      className="p-0 h-auto pl-1"
-                      onClick={() => setActiveTab('register')}
-                    >
-                      立即註冊
-                    </Button>
-                  </p>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="register">
-              <Card className="border-0 shadow-none">
-                <CardHeader className="px-0 pt-0">
-                  <CardTitle className="text-2xl">建立新帳號</CardTitle>
-                  <CardDescription>請填寫以下資料完成註冊</CardDescription>
-                </CardHeader>
-                <CardContent className="px-0">
-                  <Form {...registerForm}>
-                    <form
-                      onSubmit={registerForm.handleSubmit(onRegisterSubmit)}
-                      className="space-y-4"
-                    >
-                      <FormField
-                        control={registerForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>電子郵件</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
-                                <Input
-                                  placeholder="輸入電子郵件"
-                                  className="pl-10"
-                                  {...field}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>密碼</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Lock className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
-                                <Input
-                                  type="password"
-                                  placeholder="輸入密碼"
-                                  className="pl-10"
-                                  {...field}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>姓名</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <UserPlus className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
-                                <Input
-                                  placeholder="輸入真實姓名"
-                                  className="pl-10"
-                                  {...field}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>電話號碼</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <User className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
-                                <Input
-                                  placeholder="輸入電話號碼"
-                                  className="pl-10"
-                                  {...field}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <FormField
+                          control={loginForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>電子郵件</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
+                                  <Input
+                                    placeholder="輸入電子郵件"
+                                    className="pl-10"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={loginForm.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>密碼</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
+                                  <Input
+                                    type="password"
+                                    placeholder="輸入密碼"
+                                    className="pl-10"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="submit"
+                          className="w-full mt-6"
+                          disabled={loginMutation.isPending}
+                        >
+                          {loginMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
+                              登入中...
+                            </>
+                          ) : (
+                            '登入系統'
+                          )}
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                  <CardFooter className="px-0 pt-4 flex flex-col items-center border-t border-neutral-100">
+                    <p className="text-sm text-neutral-500">
+                      還沒有帳號？
                       <Button
-                        type="submit"
-                        className="w-full mt-6"
-                        disabled={registerMutation.isPending}
+                        variant="link"
+                        className="p-0 h-auto pl-1"
+                        onClick={() => setActiveTab('register')}
                       >
-                        {registerMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
-                            註冊中...
-                          </>
-                        ) : (
-                          '建立帳號'
-                        )}
+                        立即註冊
                       </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-                <CardFooter className="px-0 pt-4 flex flex-col items-center border-t border-neutral-100">
-                  <p className="text-sm text-neutral-500">
-                    已有帳號？
-                    <Button
-                      variant="link"
-                      className="p-0 h-auto pl-1"
-                      onClick={() => setActiveTab('login')}
-                    >
-                      立即登入
-                    </Button>
-                  </p>
-                </CardFooter>
-              </Card>
-            </TabsContent>
+                    </p>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              <TabsContent
+                value="register"
+                className="absolute inset-0 data-[state=inactive]:opacity-0 data-[state=inactive]:pointer-events-none transition-opacity duration-200"
+              >
+                <Card className="border-0 shadow-none">
+                  <CardHeader className="px-0 pt-0">
+                    <CardTitle className="text-2xl">建立新帳號</CardTitle>
+                    <CardDescription>請填寫以下資料完成註冊</CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-0">
+                    <Form {...registerForm}>
+                      <form
+                        onSubmit={registerForm.handleSubmit(onRegisterSubmit)}
+                        className="space-y-4"
+                      >
+                        <FormField
+                          control={registerForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>電子郵件</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
+                                  <Input
+                                    placeholder="輸入電子郵件"
+                                    className="pl-10"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={registerForm.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>密碼</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
+                                  <Input
+                                    type="password"
+                                    placeholder="輸入密碼"
+                                    className="pl-10"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={registerForm.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>姓名</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <UserPlus className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
+                                  <Input
+                                    placeholder="輸入真實姓名"
+                                    className="pl-10"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={registerForm.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>電話號碼</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <User className="absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
+                                  <Input
+                                    placeholder="輸入電話號碼"
+                                    className="pl-10"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="submit"
+                          className="w-full mt-6"
+                          disabled={registerMutation.isPending}
+                        >
+                          {registerMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
+                              註冊中...
+                            </>
+                          ) : (
+                            '建立帳號'
+                          )}
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                  <CardFooter className="px-0 pt-4 flex flex-col items-center border-t border-neutral-100">
+                    <p className="text-sm text-neutral-500">
+                      已有帳號？
+                      <Button
+                        variant="link"
+                        className="p-0 h-auto pl-1"
+                        onClick={() => setActiveTab('login')}
+                      >
+                        立即登入
+                      </Button>
+                    </p>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+            </div>
           </Tabs>
         </div>
       </div>
