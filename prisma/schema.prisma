@@ -20,13 +20,13 @@ model Clinic {
   updatedAt DateTime @updatedAt
 
   // Relations
-  users        UserClinic[]
-  patients     Patient[]
-  departments  Department[]
-  rooms        Room[]
-  doctors      Doctor[]
-  appointments Appointment[]
-  activityLogs ActivityLog[]
+  users          UserClinic[]
+  patientClinics PatientClinic[] // Changed from patients to patientClinics
+  departments    Department[]
+  rooms          Room[]
+  doctors        Doctor[]
+  appointments   Appointment[]
+  activityLogs   ActivityLog[]
 }
 
 model User {
@@ -60,10 +60,11 @@ model UserClinic {
   @@id([userId, clinicId])
 }
 
+// Modified Patient model - removed clinicId
 model Patient {
   id               String    @id @default(cuid())
-  clinicId         String
-  nationalId       String?
+  firebaseUid      String?   @unique // Added for Firebase authentication
+  nationalId       String?   @unique // Made globally unique
   name             String
   birthDate        DateTime?
   gender           Gender?
@@ -72,18 +73,39 @@ model Patient {
   address          String?
   emergencyContact String?
   emergencyPhone   String?
-  medicalHistory   Json?
-  note             String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   // Relations
-  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  appointments Appointment[]
+  clinicPatients PatientClinic[] // New relation
+  appointments   Appointment[]
 
-  @@unique([clinicId, nationalId])
-  @@index([clinicId, phone])
-  @@index([clinicId, name])
+  @@index([firebaseUid])
+  @@index([nationalId])
+  @@index([phone])
+  @@index([name])
+}
+
+// New PatientClinic model for many-to-many relationship
+model PatientClinic {
+  patientId      String
+  clinicId       String
+  patientNumber  String? // Clinic-specific patient number
+  medicalHistory Json? // Clinic-specific medical history
+  note           String? // Clinic-specific notes
+  firstVisitDate DateTime @default(now())
+  lastVisitDate  DateTime @default(now())
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinic  Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@id([patientId, clinicId])
+  @@unique([clinicId, patientNumber]) // Patient number is unique within a clinic
+  @@index([clinicId, isActive])
 }
 
 model Department {
@@ -155,10 +177,11 @@ model DoctorRoom {
   @@id([doctorId, roomId])
 }
 
+// Appointment model remains mostly the same
 model Appointment {
   id                String            @id @default(cuid())
   clinicId          String
-  patientId         String
+  patientId         String // Still references Patient.id
   doctorId          String?
   roomId            String?
   appointmentNumber Int? // 看診號碼
