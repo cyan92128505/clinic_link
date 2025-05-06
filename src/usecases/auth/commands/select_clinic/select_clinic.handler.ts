@@ -3,16 +3,18 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { BaseCommandUseCase } from '../../../common/base/base_usecase';
 import { SelectClinicCommand } from './select_clinic.command';
 import { SelectClinicResponse } from './select_clinic.response';
 import { PrismaService } from '../../../../infrastructure/common/database/prisma/prisma.service';
 
 @Injectable()
-export class SelectClinicHandler extends BaseCommandUseCase<
-  SelectClinicCommand,
-  SelectClinicResponse
-> {
+@CommandHandler(SelectClinicCommand)
+export class SelectClinicHandler
+  extends BaseCommandUseCase<SelectClinicCommand, SelectClinicResponse>
+  implements ICommandHandler<SelectClinicCommand>
+{
   constructor(private prismaService: PrismaService) {
     super();
   }

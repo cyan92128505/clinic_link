@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { BaseCommandUseCase } from '../../../common/base/base_usecase';
 import { RegisterCommand } from './register.command';
 import { RegisterResponse } from './register.response';
@@ -11,10 +12,11 @@ import { PrismaService } from '../../../../infrastructure/common/database/prisma
 import { Role } from '@prisma/client';
 
 @Injectable()
-export class RegisterHandler extends BaseCommandUseCase<
-  RegisterCommand,
-  RegisterResponse
-> {
+@CommandHandler(RegisterCommand)
+export class RegisterHandler
+  extends BaseCommandUseCase<RegisterCommand, RegisterResponse>
+  implements ICommandHandler<RegisterCommand>
+{
   constructor(
     private authService: AuthService,
     private prismaService: PrismaService,

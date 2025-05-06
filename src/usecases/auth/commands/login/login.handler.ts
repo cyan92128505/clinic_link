@@ -4,12 +4,14 @@ import { LoginCommand } from './login.command';
 import { LoginResponse } from './login.response';
 import { AuthService } from '../../../../infrastructure/auth/services/auth.service';
 import { PrismaService } from '../../../../infrastructure/common/database/prisma/prisma.service';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
 @Injectable()
-export class LoginHandler extends BaseCommandUseCase<
-  LoginCommand,
-  LoginResponse
-> {
+@CommandHandler(LoginCommand)
+export class LoginHandler
+  extends BaseCommandUseCase<LoginCommand, LoginResponse>
+  implements ICommandHandler<LoginCommand>
+{
   constructor(
     private authService: AuthService,
     private prismaService: PrismaService,

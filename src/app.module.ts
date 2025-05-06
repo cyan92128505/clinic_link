@@ -16,9 +16,11 @@ import { HealthModule } from './app/health/health.module';
 import { AppController } from './app.controller';
 import { AppointmentModule } from './app/appointment/appointment.module';
 import { LoggingMiddleware } from './infrastructure/common/middleware/logging.middleware';
+import { CqrsModule } from '@nestjs/cqrs';
 
 @Module({
   imports: [
+    CqrsModule,
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,

@@ -1,7 +1,8 @@
 import { User } from '../entities/user.entity';
-import { UserClinic } from '../entities/user-clinic.entity';
+import { UserClinic } from '../entities/user_clinic.entity';
 
 export interface IUserRepository {
+  findByIds(ids: String[]): Promise<User[]>;
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findAll(): Promise<User[]>;

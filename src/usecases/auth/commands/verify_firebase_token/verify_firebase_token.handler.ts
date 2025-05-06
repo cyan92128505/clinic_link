@@ -1,4 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+
 import { BaseCommandUseCase } from '../../../common/base/base_usecase';
 import { VerifyFirebaseTokenCommand } from './verify_firebase_token.command';
 import { VerifyFirebaseTokenResponse } from './verify_firebase_token.response';
@@ -6,10 +8,14 @@ import { AuthService } from '../../../../infrastructure/auth/services/auth.servi
 import { PrismaService } from '../../../../infrastructure/common/database/prisma/prisma.service';
 
 @Injectable()
-export class VerifyFirebaseTokenHandler extends BaseCommandUseCase<
-  VerifyFirebaseTokenCommand,
-  VerifyFirebaseTokenResponse
-> {
+@CommandHandler(VerifyFirebaseTokenCommand)
+export class VerifyFirebaseTokenHandler
+  extends BaseCommandUseCase<
+    VerifyFirebaseTokenCommand,
+    VerifyFirebaseTokenResponse
+  >
+  implements ICommandHandler<VerifyFirebaseTokenCommand>
+{
   constructor(
     private authService: AuthService,
     private prismaService: PrismaService,

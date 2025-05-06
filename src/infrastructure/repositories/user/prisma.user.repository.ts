@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/database/prisma/prisma.service';
 import { IUserRepository } from '../../../domain/user/interfaces/user.repository.interface';
 import { User } from '../../../domain/user/entities/user.entity';
-import { UserClinic } from '../../../domain/user/entities/user-clinic.entity';
+import { UserClinic } from '../../../domain/user/entities/user_clinic.entity';
 import { Role } from '../../../domain/user/value_objects/role.enum';
 
 @Injectable()
@@ -10,6 +10,28 @@ export class PrismaUserRepository implements IUserRepository {
   private readonly logger = new Logger(PrismaUserRepository.name);
 
   constructor(private prisma: PrismaService) {}
+
+  async findByIds(ids: String[]): Promise<User[]> {
+    try {
+      const users = await this.prisma.user.findMany({
+        where: {
+          id: ids.join(','),
+        },
+      });
+
+      if (!users) {
+        return [];
+      }
+
+      return users.map((user) => this.mapToDomainEntity(user));
+    } catch (error) {
+      this.logger.error(
+        `Error finding user by ID: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
 
   /**
    * Find all users

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/database/prisma/prisma.service';
-import { IPatientClinicRepository } from 'src/domain/patient/interfaces/patient-clinic.repository.interface';
-import { PatientClinic } from 'src/domain/patient/entities/patient-clinic.entity';
+import { IPatientClinicRepository } from 'src/domain/patient/interfaces/patient_clinic.repository.interface';
+import { PatientClinic } from 'src/domain/patient/entities/patient_clinic.entity';
 
 @Injectable()
 export class PrismaPatientClinicRepository implements IPatientClinicRepository {

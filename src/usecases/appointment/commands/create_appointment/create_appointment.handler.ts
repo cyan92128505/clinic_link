@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IAppointmentRepository } from '../../../../domain/appointment/interfaces/appointment.repository.interface';
 import { CreateAppointmentCommand } from './create_appointment.command';
 import { CreateAppointmentResponse } from './create_appointment.response';
@@ -12,7 +13,10 @@ import { AppointmentStatus } from '../../../../domain/appointment/value_objects/
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
-export class CreateAppointmentHandler {
+@CommandHandler(CreateAppointmentCommand)
+export class CreateAppointmentHandler
+  implements ICommandHandler<CreateAppointmentCommand>
+{
   private readonly logger = new Logger(CreateAppointmentHandler.name);
 
   constructor(
