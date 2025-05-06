@@ -62,13 +62,16 @@ export class PrismaUserRepository implements IUserRepository {
         where: {
           id,
         },
+        include: {
+          clinics: true, // 包含用戶診所關聯
+        },
       });
 
       if (!user) {
         return null;
       }
 
-      return this.mapToDomainEntity(user);
+      return this.mapToDomainEntityWithClinics(user);
     } catch (error) {
       this.logger.error(
         `Error finding user by ID: ${error.message}`,
@@ -87,13 +90,16 @@ export class PrismaUserRepository implements IUserRepository {
         where: {
           email,
         },
+        include: {
+          clinics: true, // 包含用戶診所關聯
+        },
       });
 
       if (!user) {
         return null;
       }
 
-      return this.mapToDomainEntity(user);
+      return this.mapToDomainEntityWithClinics(user);
     } catch (error) {
       this.logger.error(
         `Error finding user by email: ${error.message}`,
@@ -135,12 +141,17 @@ export class PrismaUserRepository implements IUserRepository {
    */
   async update(id: string, data: Partial<User>): Promise<User> {
     try {
+      // 從更新資料中排除 clinics 屬性，因為 Prisma 需要特定的格式
+      const { clinics, ...updateData } = data;
+
       const updatedUser = await this.prisma.user.update({
         where: {
           id: id,
         },
-        data,
+        data: updateData,
       });
+
+      // 如果需要更新 clinics 關聯，應該使用單獨的方法
 
       return this.mapToDomainEntity(updatedUser);
     } catch (error) {
@@ -262,9 +273,16 @@ export class PrismaUserRepository implements IUserRepository {
         },
       });
 
-      return userClinics.map((userClinic) =>
-        this.mapToDomainEntity(userClinic.user),
-      );
+      // 這裡也應該包含用戶的診所關聯
+      const users = [] as Array<User>;
+      for (const userClinic of userClinics) {
+        const user = await this.findById(userClinic.userId);
+        if (user) {
+          users.push(user);
+        }
+      }
+
+      return users;
     } catch (error) {
       this.logger.error(
         `Error finding users by clinic: ${error.message}`,
@@ -288,6 +306,27 @@ export class PrismaUserRepository implements IUserRepository {
       createdAt: prismaUser.createdAt,
       updatedAt: prismaUser.updatedAt,
     });
+  }
+
+  // 新增映射方法，包括用戶診所關聯
+  private mapToDomainEntityWithClinics(prismaUser: any): User {
+    const user = this.mapToDomainEntity(prismaUser);
+
+    // 映射診所關聯
+    if (prismaUser.clinics && Array.isArray(prismaUser.clinics)) {
+      user.clinics = prismaUser.clinics.map(
+        (clinic) =>
+          new UserClinic({
+            userId: clinic.userId,
+            clinicId: clinic.clinicId,
+            role: clinic.role,
+            createdAt: clinic.createdAt,
+            updatedAt: clinic.updatedAt,
+          }),
+      );
+    }
+
+    return user;
   }
 
   // Helper method to map Prisma model to UserClinic entity

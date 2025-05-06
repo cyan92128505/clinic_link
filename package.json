@@ -44,6 +44,7 @@
     "fs-extra": "^11.3.0",
     "mqtt": "^5.11.0",
     "passport": "^0.7.0",
+    "passport-custom": "^1.1.1",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "postgres": "^3.4.5",
