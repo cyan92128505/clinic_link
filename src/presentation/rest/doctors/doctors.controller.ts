@@ -34,7 +34,7 @@ interface AuthenticatedRequest extends Request {
  * Controller for doctor-related endpoints
  */
 @ApiTags('doctors')
-@Controller('api/v1/doctors')
+@Controller('doctors')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class DoctorsController {

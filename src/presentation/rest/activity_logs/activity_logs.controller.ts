@@ -45,7 +45,7 @@ interface AuthenticatedRequest extends Request {
  * Controller for activity logs endpoints
  */
 @ApiTags('activity-logs')
-@Controller('api/v1/activity-logs')
+@Controller('activity-logs')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class ActivityLogsController {

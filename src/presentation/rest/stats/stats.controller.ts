@@ -37,7 +37,7 @@ interface RequestWithUser {
  * Controller for statistics-related endpoints
  */
 @ApiTags('statistics')
-@Controller('api/v1/stats')
+@Controller('stats')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class StatsController {

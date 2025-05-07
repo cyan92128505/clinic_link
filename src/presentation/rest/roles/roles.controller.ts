@@ -26,7 +26,7 @@ interface RequestWithUser extends Request {
 }
 
 @ApiTags('roles')
-@Controller('api/v1/roles')
+@Controller('roles')
 export class RolesController {
   constructor(private readonly queryBus: QueryBus) {}
 

@@ -26,7 +26,7 @@ interface AuthenticatedRequest extends Request {
  * Controller for department-related endpoints
  */
 @ApiTags('departments')
-@Controller('api/v1/departments')
+@Controller('departments')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class DepartmentsController {

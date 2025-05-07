@@ -38,7 +38,7 @@ interface PatientAuthenticatedRequest extends Request {
 }
 
 @ApiTags('patient-auth')
-@Controller('api/v1/patient/auth')
+@Controller('patient/auth')
 export class PatientAuthController {
   constructor(
     private readonly registerPatientHandler: RegisterPatientHandler,

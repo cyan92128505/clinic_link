@@ -62,7 +62,7 @@ interface RoomsWithQueueResult {
   date: Date;
 }
 
-@Controller('api/v1/rooms')
+@Controller('rooms')
 @ApiTags('rooms')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
