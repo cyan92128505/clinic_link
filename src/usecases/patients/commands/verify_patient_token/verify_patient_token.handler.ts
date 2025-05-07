@@ -3,16 +3,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerifyPatientTokenCommand } from './verify_patient_token.command';
 import { IPatientRepository } from 'src/domain/patient/interfaces/patient.repository.interface';
 import { Patient } from 'src/domain/patient/entities/patient.entity';
-
-// Firebase Admin interface
-interface IFirebaseAdminService {
-  verifyIdToken(token: string): Promise<{
-    uid: string;
-    email?: string;
-    phone_number?: string;
-    name?: string;
-  }>;
-}
+import { IFirebaseAdminService } from 'src/domain/auth/interfaces/firebase_admin_service.interface';
 
 @Injectable()
 @CommandHandler(VerifyPatientTokenCommand)

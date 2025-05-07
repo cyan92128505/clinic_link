@@ -1,95 +1,133 @@
-// Response DTO for dashboard statistics
-export class GetDashboardStatsResponse {
-  // Total appointments for the day
-  todayAppointments: number;
+import { Inject, Injectable } from '@nestjs/common';
+import { GetDashboardStatsQuery } from './get_dashboard_stats.query';
+import { GetDashboardStatsResponse } from './get_dashboard_stats.response';
+import { IAppointmentRepository } from '../../../../domain/appointment/interfaces/appointment.repository.interface';
+import { IPatientClinicRepository } from '../../../../domain/patient/interfaces/patient_clinic.repository.interface';
+import { AppointmentStatus } from '../../../../domain/appointment/value_objects/appointment.enum';
+import { startOfDay, endOfDay, differenceInMinutes } from 'date-fns';
+import { Appointment } from '../../../../domain/appointment/entities/appointment.entity';
 
-  // Patients currently waiting
-  waitingPatients: number;
+@Injectable()
+export class GetDashboardStatsHandler {
+  constructor(
+    @Inject('IAppointmentRepository')
+    private readonly appointmentRepository: IAppointmentRepository,
+    @Inject('IPatientClinicRepository')
+    private readonly patientClinicRepository: IPatientClinicRepository,
+  ) {}
 
-  // Completed appointments
-  completedAppointments: number;
+  async execute(
+    query: GetDashboardStatsQuery,
+  ): Promise<GetDashboardStatsResponse> {
+    const { clinicId, date } = query;
 
-  // Cancelled appointments
-  cancelledAppointments: number;
+    // Use provided date or default to today
+    const targetDate = date || new Date();
+    const dayStart = startOfDay(targetDate);
+    const dayEnd = endOfDay(targetDate);
 
-  // No-show appointments
-  noShowAppointments: number;
-
-  // New patients registered
-  newPatients: number;
-
-  // Average patient wait time (in minutes)
-  averageWaitTime: number;
-
-  // Average consultation time (in minutes)
-  averageConsultationTime: number;
-
-  constructor(data: {
-    todayAppointments: number;
-    waitingPatients: number;
-    completedAppointments: number;
-    cancelledAppointments: number;
-    noShowAppointments: number;
-    newPatients: number;
-    averageWaitTime: number;
-    averageConsultationTime: number;
-  }) {
-    this.todayAppointments = data.todayAppointments;
-    this.waitingPatients = data.waitingPatients;
-    this.completedAppointments = data.completedAppointments;
-    this.cancelledAppointments = data.cancelledAppointments;
-    this.noShowAppointments = data.noShowAppointments;
-    this.newPatients = data.newPatients;
-    this.averageWaitTime = data.averageWaitTime;
-    this.averageConsultationTime = data.averageConsultationTime;
-  }
-
-  // Method to create a simplified response
-  toSimpleResponse() {
-    return {
-      todayAppointments: this.todayAppointments,
-      waitingPatients: this.waitingPatients,
-      completedAppointments: this.completedAppointments,
-    };
-  }
-
-  // Method to calculate appointment-related percentages
-  calculateAppointmentPercentages() {
-    const total = this.todayAppointments;
-    return {
-      completedRate:
-        total > 0 ? Math.round((this.completedAppointments / total) * 100) : 0,
-      cancelledRate:
-        total > 0 ? Math.round((this.cancelledAppointments / total) * 100) : 0,
-      noShowRate:
-        total > 0 ? Math.round((this.noShowAppointments / total) * 100) : 0,
-    };
-  }
-
-  // Static method to create response from handler result
-  static fromHandler(result: {
-    todayAppointments: number;
-    waitingPatients: number;
-    completedAppointments: number;
-    cancelledAppointments: number;
-    noShowAppointments: number;
-    newPatients: number;
-    averageWaitTime: number;
-    averageConsultationTime: number;
-  }): GetDashboardStatsResponse {
-    return new GetDashboardStatsResponse(result);
-  }
-
-  // Method to provide a narrative summary
-  getNarrativeSummary(): string {
-    const percentages = this.calculateAppointmentPercentages();
-    return (
-      `今日總掛號 ${this.todayAppointments} 人，` +
-      `已完成 ${this.completedAppointments} 人（${percentages.completedRate}%），` +
-      `取消 ${this.cancelledAppointments} 人（${percentages.cancelledRate}%），` +
-      `未到診 ${this.noShowAppointments} 人（${percentages.noShowRate}%）。` +
-      `平均候診時間 ${this.averageWaitTime} 分鐘，` +
-      `平均看診時間 ${this.averageConsultationTime} 分鐘。`
+    // Get all appointments for the day
+    // Since findByClinicAndDateRange doesn't exist in the interface,
+    // we'll use findByDate which is available
+    const appointments = await this.appointmentRepository.findByDate(
+      clinicId,
+      targetDate,
     );
+
+    // Calculate appointment statistics
+    const todayAppointments = appointments.length;
+
+    // Count appointments by status
+    const waitingPatients = this.countAppointmentsByStatus(appointments, [
+      AppointmentStatus.CHECKED_IN,
+      AppointmentStatus.SCHEDULED,
+    ]);
+
+    const completedAppointments = this.countAppointmentsByStatus(appointments, [
+      AppointmentStatus.COMPLETED,
+    ]);
+
+    const cancelledAppointments = this.countAppointmentsByStatus(appointments, [
+      AppointmentStatus.CANCELLED,
+    ]);
+
+    const noShowAppointments = this.countAppointmentsByStatus(appointments, [
+      AppointmentStatus.NO_SHOW,
+    ]);
+
+    // Get new patients registered today
+    // Since countNewPatientsByClinicAndDate doesn't exist in the interface,
+    // we need to implement a workaround using available methods
+    const allPatientClinics =
+      await this.patientClinicRepository.findByClinic(clinicId);
+    const newPatients = allPatientClinics.filter(
+      (pc) => pc.firstVisitDate >= dayStart && pc.firstVisitDate <= dayEnd,
+    ).length;
+
+    // Calculate average wait time (from check-in to start)
+    const { averageWaitTime, averageConsultationTime } =
+      this.calculateAverageTimes(appointments);
+
+    // Create and return response
+    return GetDashboardStatsResponse.fromHandler({
+      todayAppointments,
+      waitingPatients,
+      completedAppointments,
+      cancelledAppointments,
+      noShowAppointments,
+      newPatients,
+      averageWaitTime,
+      averageConsultationTime,
+    });
+  }
+
+  // Helper method to count appointments by status
+  private countAppointmentsByStatus(
+    appointments: Appointment[],
+    statuses: AppointmentStatus[],
+  ): number {
+    return appointments.filter((apt) => statuses.includes(apt.status)).length;
+  }
+
+  // Helper method to calculate average times
+  private calculateAverageTimes(appointments: Appointment[]): {
+    averageWaitTime: number;
+    averageConsultationTime: number;
+  } {
+    let totalWaitTime = 0;
+    let waitTimeCount = 0;
+    let totalConsultationTime = 0;
+    let consultationTimeCount = 0;
+
+    for (const apt of appointments) {
+      // Calculate wait time (if patient has checked in and started consultation)
+      if (apt.checkinTime && apt.startTime) {
+        totalWaitTime += differenceInMinutes(
+          new Date(apt.startTime),
+          new Date(apt.checkinTime),
+        );
+        waitTimeCount++;
+      }
+
+      // Calculate consultation time (if consultation started and completed)
+      if (apt.startTime && apt.endTime) {
+        totalConsultationTime += differenceInMinutes(
+          new Date(apt.endTime),
+          new Date(apt.startTime),
+        );
+        consultationTimeCount++;
+      }
+    }
+
+    // Compute average times
+    const averageWaitTime =
+      waitTimeCount > 0 ? Math.round(totalWaitTime / waitTimeCount) : 0;
+
+    const averageConsultationTime =
+      consultationTimeCount > 0
+        ? Math.round(totalConsultationTime / consultationTimeCount)
+        : 0;
+
+    return { averageWaitTime, averageConsultationTime };
   }
 }

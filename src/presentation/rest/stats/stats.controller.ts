@@ -5,7 +5,6 @@ import {
   UseGuards,
   Request,
   Query,
-  Inject,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,7 +19,7 @@ import { JwtAuthGuard } from '../../../infrastructure/auth/guards/jwt_auth.guard
 import { GetDashboardStatsQuery } from '../../../usecases/stats/queries/get_dashboard_stats/get_dashboard_stats.query';
 import { DashboardStatsResponseDto } from './dto/stats.dto';
 import { Role } from '../../../domain/user/value_objects/role.enum';
-import { GetDashboardStatsResponse } from '../../../usecases/stats/queries/get_dashboard_stats/get_dashboard_stats.response';
+import { GetDashboardStatsHandler } from 'src/usecases/stats/queries/get_dashboard_stats/get_dashboard_stats.handler';
 
 // 定義請求物件型別
 interface RequestWithUser {
@@ -34,11 +33,6 @@ interface RequestWithUser {
   };
 }
 
-// 定義處理器介面
-interface GetDashboardStatsHandler {
-  execute(query: GetDashboardStatsQuery): Promise<GetDashboardStatsResponse>;
-}
-
 /**
  * Controller for statistics-related endpoints
  */
@@ -50,7 +44,6 @@ export class StatsController {
   private readonly logger = new Logger(StatsController.name);
 
   constructor(
-    @Inject('GetDashboardStatsHandler')
     private readonly dashboardStatsHandler: GetDashboardStatsHandler,
   ) {}
 
