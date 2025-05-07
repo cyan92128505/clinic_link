@@ -86,3 +86,26 @@ export class GetPatientProfileResponse {
     return new GetPatientProfileResponse(result);
   }
 }
+
+export class PatientClinicDto {
+  clinicId!: string;
+  clinicName!: string;
+  patientNumber?: string;
+  firstVisitDate!: Date;
+  lastVisitDate!: Date;
+  isActive!: boolean;
+  // 其他需要的欄位
+}
+
+export class PatientProfileResponseDto {
+  id!: string;
+  name!: string;
+  phone!: string;
+  email?: string;
+  nationalId?: string;
+  birthDate?: Date;
+  gender?: string;
+  address?: string;
+  clinics!: PatientClinicDto[];
+  // 其他需要的欄位
+}

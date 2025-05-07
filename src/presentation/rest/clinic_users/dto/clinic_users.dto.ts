@@ -5,25 +5,25 @@ import { Role } from 'src/domain/user/value_objects/role.enum';
 // Data Transfer Object for adding a user to a clinic
 export class AddUserToClinicDto {
   @IsString()
-  userId: string;
+  userId!: string;
 
   @IsEnum(Role)
-  role: Role;
+  role!: Role;
 }
 
 // Data Transfer Object for removing a user from a clinic
 export class RemoveUserFromClinicDto {
   @IsString()
-  userId: string;
+  userId!: string;
 }
 
 // Data Transfer Object for updating a user's role in a clinic
 export class UpdateUserRoleDto {
   @IsString()
-  userId: string;
+  userId!: string;
 
   @IsEnum(Role)
-  newRole: Role;
+  newRole!: Role;
 }
 
 // Data Transfer Object for retrieving clinic users

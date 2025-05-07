@@ -6,6 +6,7 @@ import { VerifyFirebaseTokenCommand } from './verify_firebase_token.command';
 import { VerifyFirebaseTokenResponse } from './verify_firebase_token.response';
 import { AuthService } from '../../../../infrastructure/auth/services/auth.service';
 import { PrismaService } from '../../../../infrastructure/common/database/prisma/prisma.service';
+import { User } from '../../../../domain/user/entities/user.entity';
 
 @Injectable()
 @CommandHandler(VerifyFirebaseTokenCommand)
@@ -40,6 +41,11 @@ export class VerifyFirebaseTokenHandler
       throw new UnauthorizedException('Invalid Firebase token');
     }
 
+    // Email is required for our users
+    if (!decodedToken.email) {
+      throw new UnauthorizedException('Email is required for authentication');
+    }
+
     // Check if user exists by Firebase UID or email
     let user = await this.prismaService.user.findFirst({
       where: {
@@ -66,15 +72,19 @@ export class VerifyFirebaseTokenHandler
         await this.authService.hashPassword(randomPassword);
 
       const userName =
-        `${decodedToken.name}` || decodedToken.email?.split('@')[0] || '';
+        `${decodedToken.name}` || decodedToken.email.split('@')[0] || '';
 
-      // Create new user
+      // Create new user with empty clinics array
       user = await this.prismaService.user.create({
         data: {
-          email: decodedToken.email || null,
+          email: decodedToken.email, // Email is now guaranteed to be non-null
           name: userName,
           password: hashedPassword, // Store hashed random password
           lastLoginAt: new Date(),
+          // Create empty clinics relationship
+          clinics: {
+            create: [],
+          },
         },
         include: {
           clinics: {
@@ -92,8 +102,27 @@ export class VerifyFirebaseTokenHandler
       });
     }
 
+    // At this point, we guarantee user is not null
+    if (!user) {
+      throw new Error('Failed to create or find user');
+    }
+
+    // Convert Prisma user to domain User entity if necessary
+    // or make sure your authService can handle the Prisma user type
+    const domainUser = new User({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      password: user.password,
+      phone: user.phone || undefined,
+      avatar: user.avatar || undefined,
+      isActive: user.isActive,
+      lastLoginAt: user.lastLoginAt || undefined,
+      // clinics 欄位可選，這裡可以留空或進行轉換
+    });
+
     // Generate JWT token
-    const token = await this.authService.generateToken(user);
+    const token = await this.authService.generateToken(domainUser);
 
     // Return token and user info
     return {

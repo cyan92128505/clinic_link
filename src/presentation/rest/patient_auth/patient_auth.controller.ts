@@ -24,6 +24,7 @@ import { VerifyPatientTokenHandler } from 'src/usecases//patients/commands/verif
 import { VerifyPatientTokenCommand } from 'src/usecases//patients/commands/verify_patient_token/verify_patient_token.command';
 import { GetPatientProfileHandler } from 'src/usecases//patients/queries/get_patient_profile/get_patient_profile.handler';
 import { GetPatientProfileQuery } from 'src/usecases//patients/queries/get_patient_profile/get_patient_profile.query';
+import { PatientProfileResponseDto } from 'src/usecases/patients/queries/get_patient_profile/get_patient_profile.response';
 import { PatientFirebaseAuthGuard } from 'src/infrastructure/auth/guards/patient_firebase_auth.guard';
 
 /**
@@ -32,7 +33,7 @@ import { PatientFirebaseAuthGuard } from 'src/infrastructure/auth/guards/patient
 interface PatientAuthenticatedRequest extends Request {
   patient: {
     id: string;
-    // 其他可能的患者屬性
+    // Other possible patient properties
   };
 }
 
@@ -93,15 +94,46 @@ export class PatientAuthController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Patient profile retrieved successfully',
+    type: PatientProfileResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: 'Unauthorized',
   })
-  async getProfile(@Req() req: PatientAuthenticatedRequest) {
-    // req.patient is set by PatientFirebaseAuthGuard
+  async getProfile(
+    @Req() req: PatientAuthenticatedRequest,
+  ): Promise<PatientProfileResponseDto> {
     const patientId: string = req.patient.id;
     const query = new GetPatientProfileQuery(patientId);
-    return await this.getPatientProfileHandler.execute(query);
+
+    // Get the handler result
+    const result = await this.getPatientProfileHandler.execute(query);
+
+    // Transform the result to match the response DTO
+    const { patient, patientClinics } = result;
+
+    // Construct the response DTO
+    const response: PatientProfileResponseDto = {
+      id: patient.id,
+      name: patient.name,
+      phone: patient.phone,
+      email: patient.email,
+      nationalId: patient.nationalId,
+      birthDate: patient.birthDate,
+      gender: patient.gender,
+      address: patient.address,
+      clinics: patientClinics
+        .filter((pc) => pc !== null)
+        .map((pc) => ({
+          clinicId: pc.clinic?.id ?? '',
+          clinicName: pc.clinic?.name ?? '',
+          patientNumber: pc.patientClinic.patientNumber,
+          firstVisitDate: pc.patientClinic.firstVisitDate,
+          lastVisitDate: pc.patientClinic.lastVisitDate,
+          isActive: pc.patientClinic.isActive,
+        })),
+    };
+
+    return response;
   }
 }
