@@ -8,7 +8,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { AddUserToClinicCommand } from './add_user_to_clinic.command';
 import { IUserRepository } from 'src/domain/user/interfaces/user.repository.interface';
 import { IClinicRepository } from 'src/domain/clinic/interfaces/clinic.repository.interface';
-import { Role } from 'src/domain/user/value_objects/role.enum';
+import { Role, RoleUtils } from 'src/domain/user/value_objects/role.enum';
 import { UserClinic } from 'src/domain/user/entities/user_clinic.entity';
 
 @Injectable()
@@ -48,8 +48,11 @@ export class AddUserToClinicHandler
       );
     }
 
+    const addedByUserRole =
+      RoleUtils.fromString(addedBy.userRole) ?? Role.RECEPTIONIST;
+
     // Additional check: Clinic admin can only add users to their own clinic
-    if (addedBy.userRole === Role.CLINIC_ADMIN) {
+    if (addedByUserRole === Role.CLINIC_ADMIN) {
       const adminClinics = await this.userRepository.findByClinic(clinicId);
       const isAdminOfClinic = adminClinics.some(
         (adminUser) => adminUser.id === addedBy.userId,

@@ -3,6 +3,24 @@ import { PrismaService } from '../../common/database/prisma/prisma.service';
 import { IPatientRepository } from 'src/domain/patient/interfaces/patient.repository.interface';
 import { Patient } from 'src/domain/patient/entities/patient.entity';
 import { Gender } from 'src/domain/patient/value_objects/gender.enum';
+import { Prisma } from '@prisma/client';
+
+// 定義 Prisma Patient 模型的型別
+interface PrismaPatient {
+  id: string;
+  firebaseUid: string | null;
+  nationalId: string | null;
+  name: string;
+  birthDate: Date | null;
+  gender: string | null;
+  phone: string;
+  email: string | null;
+  address: string | null;
+  emergencyContact: string | null;
+  emergencyPhone: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 @Injectable()
 export class PrismaPatientRepository implements IPatientRepository {
@@ -11,12 +29,30 @@ export class PrismaPatientRepository implements IPatientRepository {
   constructor(private prisma: PrismaService) {}
 
   /**
+   * Helper method to check if an error is an Error object
+   */
+  private isError(error: unknown): error is Error {
+    return error instanceof Error;
+  }
+
+  /**
+   * Helper method to check if an error is a Prisma error
+   */
+  private isPrismaError(
+    error: unknown,
+  ): error is Prisma.PrismaClientKnownRequestError {
+    return (
+      this.isError(error) && 'code' in error && typeof error.code === 'string'
+    );
+  }
+
+  /**
    * Find all patients with optional filters (no clinicId)
    */
   async findAll(filters?: Partial<Patient>): Promise<Patient[]> {
     try {
       // Build the where condition
-      const where: any = {};
+      const where: Prisma.PatientWhereInput = {};
 
       // Add filters if provided
       if (filters) {
@@ -50,11 +86,16 @@ export class PrismaPatientRepository implements IPatientRepository {
         orderBy: [{ name: 'asc' }],
       });
 
-      return patients.map((patient) => this.mapToDomainEntity(patient));
-    } catch (error) {
+      return patients.map((patient) =>
+        this.mapToDomainEntity(patient as PrismaPatient),
+      );
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding all patients: ${error.message}`,
-        error.stack,
+        `Error finding all patients: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -73,11 +114,14 @@ export class PrismaPatientRepository implements IPatientRepository {
         return null;
       }
 
-      return this.mapToDomainEntity(patient);
-    } catch (error) {
+      return this.mapToDomainEntity(patient as PrismaPatient);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding patient by ID: ${error.message}`,
-        error.stack,
+        `Error finding patient by ID: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -96,11 +140,14 @@ export class PrismaPatientRepository implements IPatientRepository {
         return null;
       }
 
-      return this.mapToDomainEntity(patient);
-    } catch (error) {
+      return this.mapToDomainEntity(patient as PrismaPatient);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding patient by Firebase UID: ${error.message}`,
-        error.stack,
+        `Error finding patient by Firebase UID: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -119,11 +166,14 @@ export class PrismaPatientRepository implements IPatientRepository {
         return null;
       }
 
-      return this.mapToDomainEntity(patient);
-    } catch (error) {
+      return this.mapToDomainEntity(patient as PrismaPatient);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding patient by national ID: ${error.message}`,
-        error.stack,
+        `Error finding patient by national ID: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -143,11 +193,16 @@ export class PrismaPatientRepository implements IPatientRepository {
         orderBy: [{ name: 'asc' }],
       });
 
-      return patients.map((patient) => this.mapToDomainEntity(patient));
-    } catch (error) {
+      return patients.map((patient) =>
+        this.mapToDomainEntity(patient as PrismaPatient),
+      );
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding patients by phone: ${error.message}`,
-        error.stack,
+        `Error finding patients by phone: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -189,11 +244,16 @@ export class PrismaPatientRepository implements IPatientRepository {
         take: 50, // Limit results for performance
       });
 
-      return patients.map((patient) => this.mapToDomainEntity(patient));
-    } catch (error) {
+      return patients.map((patient) =>
+        this.mapToDomainEntity(patient as PrismaPatient),
+      );
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error searching patients: ${error.message}`,
-        error.stack,
+        `Error searching patients: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -222,12 +282,12 @@ export class PrismaPatientRepository implements IPatientRepository {
         },
       });
 
-      return this.mapToDomainEntity(createdPatient);
-    } catch (error) {
-      this.logger.error(
-        `Error creating patient: ${error.message}`,
-        error.stack,
-      );
+      return this.mapToDomainEntity(createdPatient as PrismaPatient);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error creating patient: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -237,12 +297,14 @@ export class PrismaPatientRepository implements IPatientRepository {
    */
   async update(id: string, data: Partial<Patient>): Promise<Patient> {
     try {
-      const updateData: any = { ...data };
+      // 使用型別安全的方式處理更新資料
+      const updateData: Record<string, unknown> = {};
 
-      // Remove undefined fields
-      Object.keys(updateData).forEach((key) => {
-        if (updateData[key] === undefined) {
-          delete updateData[key];
+      // 複製非 undefined 欄位
+      Object.keys(data).forEach((key) => {
+        const value = data[key as keyof Partial<Patient>];
+        if (value !== undefined) {
+          updateData[key] = value;
         }
       });
 
@@ -250,15 +312,15 @@ export class PrismaPatientRepository implements IPatientRepository {
 
       const updatedPatient = await this.prisma.patient.update({
         where: { id },
-        data: updateData,
+        data: updateData as Prisma.PatientUpdateInput,
       });
 
-      return this.mapToDomainEntity(updatedPatient);
-    } catch (error) {
-      this.logger.error(
-        `Error updating patient: ${error.message}`,
-        error.stack,
-      );
+      return this.mapToDomainEntity(updatedPatient as PrismaPatient);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error updating patient: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -273,14 +335,14 @@ export class PrismaPatientRepository implements IPatientRepository {
       });
 
       return true;
-    } catch (error) {
-      this.logger.error(
-        `Error deleting patient: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
 
-      // If the error is because the patient doesn't exist, return false
-      if (error.code === 'P2025') {
+      this.logger.error(`Error deleting patient: ${errorMessage}`, errorStack);
+
+      // 如果錯誤是因為病患不存在，則返回 false
+      if (this.isPrismaError(error) && error.code === 'P2025') {
         return false;
       }
 
@@ -291,21 +353,21 @@ export class PrismaPatientRepository implements IPatientRepository {
   /**
    * Helper method to map Prisma model to domain entity
    */
-  private mapToDomainEntity(prismaPatient: any): Patient {
+  private mapToDomainEntity(prismaPatient: PrismaPatient): Patient {
     return new Patient({
       id: prismaPatient.id,
-      firebaseUid: prismaPatient.firebaseUid,
-      nationalId: prismaPatient.nationalId,
+      firebaseUid: prismaPatient.firebaseUid || undefined,
+      nationalId: prismaPatient.nationalId || undefined,
       name: prismaPatient.name,
       birthDate: prismaPatient.birthDate
         ? new Date(prismaPatient.birthDate)
         : undefined,
-      gender: prismaPatient.gender as Gender,
+      gender: prismaPatient.gender as Gender | undefined,
       phone: prismaPatient.phone,
-      email: prismaPatient.email,
-      address: prismaPatient.address,
-      emergencyContact: prismaPatient.emergencyContact,
-      emergencyPhone: prismaPatient.emergencyPhone,
+      email: prismaPatient.email || undefined,
+      address: prismaPatient.address || undefined,
+      emergencyContact: prismaPatient.emergencyContact || undefined,
+      emergencyPhone: prismaPatient.emergencyPhone || undefined,
       createdAt: new Date(prismaPatient.createdAt),
       updatedAt: new Date(prismaPatient.updatedAt),
     });

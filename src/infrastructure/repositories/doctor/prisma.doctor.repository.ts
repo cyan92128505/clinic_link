@@ -2,12 +2,37 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/database/prisma/prisma.service';
 import { IDoctorRepository } from '../../../domain/doctor/interfaces/doctor.repository.interface';
 import { Doctor } from '../../../domain/doctor/entities/doctor.entity';
+import { Prisma } from '@prisma/client';
+
+// 定義 Prisma Doctor 模型的型別
+interface PrismaDoctor {
+  id: string;
+  clinicId: string;
+  departmentId: string;
+  userId: string | null;
+  name: string;
+  title: string | null;
+  specialty: string | null;
+  licenseNumber: string | null;
+  bio: string | null;
+  avatar: string | null;
+  scheduleData: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 @Injectable()
 export class PrismaDoctorRepository implements IDoctorRepository {
   private readonly logger = new Logger(PrismaDoctorRepository.name);
 
   constructor(private prisma: PrismaService) {}
+
+  /**
+   * Helper method to check if an error is an Error object
+   */
+  private isError(error: unknown): error is Error {
+    return error instanceof Error;
+  }
 
   /**
    * Find all doctors in a clinic
@@ -21,11 +46,16 @@ export class PrismaDoctorRepository implements IDoctorRepository {
         orderBy: [{ name: 'asc' }],
       });
 
-      return doctors.map((doctor) => this.mapToDomainEntity(doctor));
-    } catch (error) {
+      return doctors.map((doctor) =>
+        this.mapToDomainEntity(doctor as PrismaDoctor),
+      );
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding all doctors: ${error.message}`,
-        error.stack,
+        `Error finding all doctors: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -47,11 +77,14 @@ export class PrismaDoctorRepository implements IDoctorRepository {
         return null;
       }
 
-      return this.mapToDomainEntity(doctor);
-    } catch (error) {
+      return this.mapToDomainEntity(doctor as PrismaDoctor);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding doctor by ID: ${error.message}`,
-        error.stack,
+        `Error finding doctor by ID: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -74,15 +107,18 @@ export class PrismaDoctorRepository implements IDoctorRepository {
           licenseNumber: doctor.licenseNumber,
           bio: doctor.bio,
           avatar: doctor.avatar,
-          scheduleData: doctor.scheduleData as any,
+          scheduleData: doctor.scheduleData,
           createdAt: doctor.createdAt,
           updatedAt: doctor.updatedAt,
         },
       });
 
-      return this.mapToDomainEntity(createdDoctor);
-    } catch (error) {
-      this.logger.error(`Error creating doctor: ${error.message}`, error.stack);
+      return this.mapToDomainEntity(createdDoctor as PrismaDoctor);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error creating doctor: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -96,20 +132,27 @@ export class PrismaDoctorRepository implements IDoctorRepository {
     data: Partial<Doctor>,
   ): Promise<Doctor> {
     try {
-      // Cast scheduleData to any for prisma JSON field if present
-      const updateData: any = { ...data };
+      // 安全地處理 scheduleData 型別
+      const updateData: Record<string, unknown> = { ...data };
+
+      if (data.scheduleData) {
+        updateData.scheduleData = data.scheduleData as Prisma.JsonValue;
+      }
 
       const updatedDoctor = await this.prisma.doctor.update({
         where: {
           id,
           clinicId,
         },
-        data: updateData,
+        data: updateData as Prisma.DoctorUpdateInput,
       });
 
-      return this.mapToDomainEntity(updatedDoctor);
-    } catch (error) {
-      this.logger.error(`Error updating doctor: ${error.message}`, error.stack);
+      return this.mapToDomainEntity(updatedDoctor as PrismaDoctor);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error updating doctor: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -127,8 +170,11 @@ export class PrismaDoctorRepository implements IDoctorRepository {
       });
 
       return deletedDoctor != null;
-    } catch (error) {
-      this.logger.error(`Error deleting doctor: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error deleting doctor: ${errorMessage}`, errorStack);
       return false;
     }
   }
@@ -149,11 +195,16 @@ export class PrismaDoctorRepository implements IDoctorRepository {
         orderBy: [{ name: 'asc' }],
       });
 
-      return doctors.map((doctor) => this.mapToDomainEntity(doctor));
-    } catch (error) {
+      return doctors.map((doctor) =>
+        this.mapToDomainEntity(doctor as PrismaDoctor),
+      );
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding doctors by department: ${error.message}`,
-        error.stack,
+        `Error finding doctors by department: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -175,11 +226,14 @@ export class PrismaDoctorRepository implements IDoctorRepository {
         return null;
       }
 
-      return this.mapToDomainEntity(doctor);
-    } catch (error) {
+      return this.mapToDomainEntity(doctor as PrismaDoctor);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding doctor by user ID: ${error.message}`,
-        error.stack,
+        `Error finding doctor by user ID: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -215,10 +269,13 @@ export class PrismaDoctorRepository implements IDoctorRepository {
       });
 
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error assigning doctor to room: ${error.message}`,
-        error.stack,
+        `Error assigning doctor to room: ${errorMessage}`,
+        errorStack,
       );
       return false;
     }
@@ -239,10 +296,13 @@ export class PrismaDoctorRepository implements IDoctorRepository {
       });
 
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error removing doctor from room: ${error.message}`,
-        error.stack,
+        `Error removing doctor from room: ${errorMessage}`,
+        errorStack,
       );
       return false;
     }
@@ -276,29 +336,34 @@ export class PrismaDoctorRepository implements IDoctorRepository {
         },
       });
 
-      return doctors.map((doctor) => this.mapToDomainEntity(doctor));
-    } catch (error) {
+      return doctors.map((doctor) =>
+        this.mapToDomainEntity(doctor as PrismaDoctor),
+      );
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding doctors by room: ${error.message}`,
-        error.stack,
+        `Error finding doctors by room: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
   }
 
-  // Helper method to map Prisma model to domain entity
-  private mapToDomainEntity(prismaDoctor: any): Doctor {
+  // Helper method to map Prisma model to domain entity with type safety
+  private mapToDomainEntity(prismaDoctor: PrismaDoctor): Doctor {
     return new Doctor({
       id: prismaDoctor.id,
       clinicId: prismaDoctor.clinicId,
       departmentId: prismaDoctor.departmentId,
-      userId: prismaDoctor.userId,
+      userId: prismaDoctor.userId || undefined,
       name: prismaDoctor.name,
-      title: prismaDoctor.title,
-      specialty: prismaDoctor.specialty,
-      licenseNumber: prismaDoctor.licenseNumber,
-      bio: prismaDoctor.bio,
-      avatar: prismaDoctor.avatar,
+      title: prismaDoctor.title || undefined,
+      specialty: prismaDoctor.specialty || undefined,
+      licenseNumber: prismaDoctor.licenseNumber || undefined,
+      bio: prismaDoctor.bio || undefined,
+      avatar: prismaDoctor.avatar || undefined,
       scheduleData: prismaDoctor.scheduleData,
       createdAt: prismaDoctor.createdAt,
       updatedAt: prismaDoctor.updatedAt,

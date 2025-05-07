@@ -27,6 +27,20 @@ import { GetActivityLogsQuery } from '../../../usecases/activity_logs/queries/ge
 import { ActivityLogsResponseDto } from './dto/activity_logs.dto';
 import { PaginationQueryParams } from '../../../usecases/common/dtos/pagination.dto';
 
+// Define interface for authenticated user
+interface UserClinic {
+  clinicId: string;
+  role: Role;
+}
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    id: string;
+    selectedClinicId: string;
+    clinics?: UserClinic[];
+  };
+}
+
 /**
  * Controller for activity logs endpoints
  */
@@ -99,7 +113,7 @@ export class ActivityLogsController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Insufficient permissions' })
   async getActivityLogs(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('userId') userId?: string,
@@ -121,7 +135,9 @@ export class ActivityLogsController {
     }
 
     // Check if user has the required role for this clinic
-    const userClinic = req.user.clinics?.find((c) => c.clinicId === clinicId);
+    const userClinic = req.user.clinics?.find(
+      (c: UserClinic) => c.clinicId === clinicId,
+    );
     if (
       !userClinic ||
       ![Role.ADMIN, Role.CLINIC_ADMIN].includes(userClinic.role)

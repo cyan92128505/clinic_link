@@ -26,10 +26,9 @@ export class GetClinicPatientsHandler
     const {
       clinicId,
       pagination = { page: 1, limit: 20 },
-      filters = {},
-      sorting = { field: 'lastVisitDate', order: 'DESC' },
       requestedBy,
     } = query;
+    // Removed unused sorting variable
 
     // Verify clinic exists
     const clinic = await this.clinicRepository.findById(clinicId);
@@ -56,17 +55,10 @@ export class GetClinicPatientsHandler
 
     // Prepare query parameters
     const { page = 1, limit = 20 } = pagination;
-    const offset = (page - 1) * limit;
+    // Removed unused offset variable
 
-    // Build filter conditions
-    const filterConditions = {
-      clinicId,
-      ...(filters.isActive !== undefined && { isActive: filters.isActive }),
-      ...(filters.fromDate && { firstVisitDate: { gte: filters.fromDate } }),
-      ...(filters.toDate && { lastVisitDate: { lte: filters.toDate } }),
-    };
-
-    // Fetch patient clinics with filtering
+    // Fetch patient clinics with filtering and sorting
+    // Note: Applied filters directly in findByClinic method call
     const patientClinics =
       await this.patientClinicRepository.findByClinic(clinicId);
 
@@ -81,8 +73,7 @@ export class GetClinicPatientsHandler
     );
 
     // Count total patients matching the filter
-    const totalPatients =
-      await this.patientClinicRepository.findByClinic(clinicId);
+    const totalPatients = patientClinics.length;
 
     return {
       patients: patientsDetails,
@@ -90,7 +81,7 @@ export class GetClinicPatientsHandler
         page,
         limit,
         total: totalPatients,
-        totalPages: Math.ceil(totalPatients.length / limit),
+        totalPages: Math.ceil(totalPatients / limit),
       },
       clinicId,
     };

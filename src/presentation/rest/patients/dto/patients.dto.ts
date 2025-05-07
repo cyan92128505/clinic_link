@@ -54,7 +54,7 @@ export class CreateClinicPatientDto {
   @ApiProperty({ description: 'Patient full name' })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @ApiProperty({ description: 'Patient phone number' })
   @IsString()
@@ -63,7 +63,7 @@ export class CreateClinicPatientDto {
     message:
       'Invalid Taiwan phone number format. Example: 0912345678 or 0223456789',
   })
-  phone: string;
+  phone!: string;
 
   @ApiPropertyOptional({ description: 'Patient national ID' })
   @IsOptional()
@@ -192,13 +192,13 @@ export class PatientClinicInfoDto {
   patientNumber?: string;
 
   @ApiProperty({ description: 'First visit date to this clinic' })
-  firstVisitDate: Date;
+  firstVisitDate!: Date;
 
   @ApiProperty({ description: 'Last visit date to this clinic' })
-  lastVisitDate: Date;
+  lastVisitDate!: Date;
 
   @ApiProperty({ description: 'Active status in this clinic' })
-  isActive: boolean;
+  isActive!: boolean;
 
   @ApiPropertyOptional({
     description: 'Clinic-specific patient medical history',
@@ -211,13 +211,13 @@ export class PatientClinicInfoDto {
 
 export class PatientDto {
   @ApiProperty({ description: 'Patient ID' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ description: 'Patient full name' })
-  name: string;
+  name!: string;
 
   @ApiProperty({ description: 'Patient phone number' })
-  phone: string;
+  phone!: string;
 
   @ApiPropertyOptional({ description: 'Patient national ID' })
   nationalId?: string;
@@ -251,21 +251,21 @@ export class PatientDto {
   updatedAt?: Date;
 
   @ApiProperty({ description: 'Patient information in current clinic' })
-  clinicInfo: PatientClinicInfoDto;
+  clinicInfo!: PatientClinicInfoDto;
 }
 
 export class PaginationMetaDto {
   @ApiProperty({ description: 'Total number of patients' })
-  total: number;
+  total!: number;
 
   @ApiProperty({ description: 'Current page number' })
-  page: number;
+  page!: number;
 
   @ApiProperty({ description: 'Number of patients per page' })
-  limit: number;
+  limit!: number;
 
   @ApiProperty({ description: 'Total number of pages' })
-  totalPages: number;
+  totalPages!: number;
 }
 
 export class GetClinicPatientsResponseDto {
@@ -273,13 +273,13 @@ export class GetClinicPatientsResponseDto {
     description: 'List of patients',
     type: [PatientDto],
   })
-  data: PatientDto[];
+  data!: PatientDto[];
 
   @ApiProperty({
     description: 'Pagination metadata',
     type: PaginationMetaDto,
   })
-  meta: PaginationMetaDto;
+  meta!: PaginationMetaDto;
 }
 
 export class CreateClinicPatientResponseDto extends PatientDto {}

@@ -50,16 +50,16 @@ export class GetPatientMedicalRecordsQueryDto {
 // Response DTOs
 export class MedicationDto {
   @ApiProperty({ description: 'Medication name' })
-  name: string;
+  name!: string;
 
   @ApiProperty({ description: 'Medication dosage' })
-  dosage: string;
+  dosage!: string;
 
   @ApiProperty({ description: 'Medication frequency' })
-  frequency: string;
+  frequency!: string;
 
   @ApiProperty({ description: 'Medication duration' })
-  duration: string;
+  duration!: string;
 
   @ApiPropertyOptional({ description: 'Additional instructions' })
   instructions?: string;
@@ -70,21 +70,21 @@ export class PrescriptionDto {
     description: 'List of medications',
     type: [MedicationDto],
   })
-  medications: MedicationDto[];
+  medications!: MedicationDto[];
 }
 
 export class MedicalRecordDto {
   @ApiProperty({ description: 'Medical record ID' })
-  id: string;
+  id!: string;
 
   @ApiPropertyOptional({ description: 'Associated appointment ID' })
   appointmentId?: string;
 
   @ApiProperty({ description: 'Date of the medical record' })
-  recordDate: Date;
+  recordDate!: Date;
 
   @ApiProperty({ description: 'Type of medical record' })
-  recordType: string;
+  recordType!: string;
 
   @ApiPropertyOptional({ description: 'Diagnosis' })
   diagnosis?: string;
@@ -122,30 +122,30 @@ export class MedicalRecordDto {
 
 export class PaginationMetaDto {
   @ApiProperty({ description: 'Total number of records' })
-  total: number;
+  total!: number;
 
   @ApiProperty({ description: 'Current page number' })
-  page: number;
+  page!: number;
 
   @ApiProperty({ description: 'Number of records per page' })
-  limit: number;
+  limit!: number;
 
   @ApiProperty({ description: 'Total number of pages' })
-  totalPages: number;
+  totalPages!: number;
 }
 
 export class GetPatientMedicalRecordsResponseDto {
   @ApiProperty({ description: 'Patient ID' })
-  patientId: string;
+  patientId!: string;
 
   @ApiProperty({ description: 'Patient name' })
-  patientName: string;
+  patientName!: string;
 
   @ApiProperty({ description: 'Clinic ID' })
-  clinicId: string;
+  clinicId!: string;
 
   @ApiProperty({ description: 'Clinic name' })
-  clinicName: string;
+  clinicName!: string;
 
   @ApiPropertyOptional({ description: 'Clinic-specific patient number' })
   patientNumber?: string;
@@ -154,11 +154,11 @@ export class GetPatientMedicalRecordsResponseDto {
     description: 'List of medical records',
     type: [MedicalRecordDto],
   })
-  records: MedicalRecordDto[];
+  records!: MedicalRecordDto[];
 
   @ApiProperty({
     description: 'Pagination metadata',
     type: PaginationMetaDto,
   })
-  meta: PaginationMetaDto;
+  meta!: PaginationMetaDto;
 }

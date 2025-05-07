@@ -11,7 +11,7 @@ export class SelectClinicCommand {
   })
   @IsNotEmpty({ message: 'Clinic ID is required' })
   @IsString({ message: 'Clinic ID must be a string' })
-  clinicId: string;
+  clinicId!: string;
 
   // userId will be added by the controller from the authenticated user
   userId?: string;

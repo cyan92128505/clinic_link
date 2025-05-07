@@ -9,7 +9,6 @@ import { CancelPatientAppointmentCommand } from './cancel_patient_appointment.co
 import { CancelPatientAppointmentResponse } from './cancel_patient_appointment.response';
 import { IAppointmentRepository } from 'src/domain/appointment/interfaces/appointment.repository.interface';
 import { AppointmentStatus } from 'src/domain/appointment/value_objects/appointment.enum';
-import { PatientNotFoundException } from 'src/domain/patient/exceptions/patient.exceptions';
 
 @Injectable()
 @CommandHandler(CancelPatientAppointmentCommand)

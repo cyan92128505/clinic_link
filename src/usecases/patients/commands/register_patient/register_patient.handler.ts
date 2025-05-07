@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegisterPatientCommand } from './register_patient.command';
 import { RegisterPatientResponse } from './register_patient.response';

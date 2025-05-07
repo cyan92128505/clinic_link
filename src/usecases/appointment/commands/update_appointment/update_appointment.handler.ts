@@ -3,6 +3,20 @@ import { IAppointmentRepository } from '../../../../domain/appointment/interface
 import { UpdateAppointmentCommand } from './update_appointment.command';
 import { UpdateAppointmentResponse } from './update_appointment.response';
 import { AppointmentStatus } from '../../../../domain/appointment/value_objects/appointment.enum';
+import { Appointment } from '../../../../domain/appointment/entities/appointment.entity';
+
+// 定義更新資料的介面
+interface AppointmentUpdateData {
+  status?: AppointmentStatus;
+  doctorId?: string | null;
+  roomId?: string | null;
+  appointmentTime?: Date;
+  checkinTime?: Date;
+  startTime?: Date;
+  endTime?: Date;
+  note?: string;
+  updatedAt: Date;
+}
 
 @Injectable()
 export class UpdateAppointmentHandler {
@@ -26,7 +40,7 @@ export class UpdateAppointmentHandler {
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: AppointmentUpdateData = {
       updatedAt: new Date(),
     };
 
@@ -70,13 +84,16 @@ export class UpdateAppointmentHandler {
       const updatedAppointment = await this.appointmentRepository.update(
         id,
         clinicId,
-        updateData,
+        updateData as Partial<Appointment>,
       );
       return new UpdateAppointmentResponse(updatedAppointment);
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
       this.logger.error(
-        `Failed to update appointment: ${error.message}`,
-        error.stack,
+        `Failed to update appointment: ${errorMessage}`,
+        errorStack,
       );
       throw new Error('Failed to update appointment');
     }

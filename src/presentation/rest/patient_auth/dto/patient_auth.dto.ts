@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
 import {
   IsString,
   IsNotEmpty,
@@ -18,7 +17,7 @@ export class PatientRegisterDto {
   })
   @IsString()
   @IsNotEmpty()
-  readonly idToken: string;
+  readonly idToken!: string;
 
   @ApiProperty({
     description: 'Patient name',
@@ -26,7 +25,7 @@ export class PatientRegisterDto {
   })
   @IsString()
   @IsNotEmpty()
-  readonly name: string;
+  readonly name!: string;
 
   @ApiProperty({
     description: 'Patient phone number',
@@ -37,7 +36,7 @@ export class PatientRegisterDto {
   @Matches(/^09\d{8}$/, {
     message: 'Phone must be a valid Taiwan mobile number',
   })
-  readonly phone: string;
+  readonly phone!: string;
 
   @ApiPropertyOptional({
     description: 'National ID (ROC ID)',
@@ -91,5 +90,5 @@ export class VerifyPatientTokenDto {
   })
   @IsString()
   @IsNotEmpty()
-  readonly idToken: string;
+  readonly idToken!: string;
 }

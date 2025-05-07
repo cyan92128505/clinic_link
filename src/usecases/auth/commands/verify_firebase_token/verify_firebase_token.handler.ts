@@ -65,11 +65,14 @@ export class VerifyFirebaseTokenHandler
       const hashedPassword =
         await this.authService.hashPassword(randomPassword);
 
+      const userName =
+        `${decodedToken.name}` || decodedToken.email?.split('@')[0] || '';
+
       // Create new user
       user = await this.prismaService.user.create({
         data: {
-          email: decodedToken.email,
-          name: decodedToken.name || decodedToken.email.split('@')[0],
+          email: decodedToken.email || null,
+          name: userName,
           password: hashedPassword, // Store hashed random password
           lastLoginAt: new Date(),
         },

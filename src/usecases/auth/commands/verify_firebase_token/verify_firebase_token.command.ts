@@ -12,5 +12,5 @@ export class VerifyFirebaseTokenCommand {
   })
   @IsNotEmpty({ message: 'Firebase token is required' })
   @IsString({ message: 'Firebase token must be a string' })
-  token: string;
+  token!: string;
 }

@@ -1,8 +1,8 @@
 import { BaseEntity } from 'src/domain/common/entities/base.entity';
 
 export class Department extends BaseEntity {
-  clinicId: string;
-  name: string;
+  clinicId!: string;
+  name!: string;
   description?: string;
   color?: string;
 

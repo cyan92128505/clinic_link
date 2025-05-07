@@ -25,7 +25,7 @@ export class UpdateClinicPatientHandler
   ) {}
 
   async execute(command: UpdateClinicPatientCommand) {
-    const { clinicId, patientId, data, updatedBy } = command;
+    const { clinicId, patientId, data } = command;
 
     // Verify clinic exists
     const clinic = await this.clinicRepository.findById(clinicId);
@@ -71,14 +71,10 @@ export class UpdateClinicPatientHandler
     }
 
     // Update patient clinic relation
-    const updatedPatientClinic = await this.patientClinicRepository.update(
-      patientId,
-      clinicId,
-      {
-        ...data,
-        updatedAt: new Date(),
-      },
-    );
+    await this.patientClinicRepository.update(patientId, clinicId, {
+      ...data,
+      updatedAt: new Date(),
+    });
 
     return {
       patientId,

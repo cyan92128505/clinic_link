@@ -5,6 +5,7 @@ import { IDepartmentRepository } from '../../../../domain/department/interfaces/
 import { IRoomRepository } from '../../../../domain/room/interfaces/room.repository.interface';
 import { GetDoctorsQuery } from './get_doctors.query';
 import { DoctorDto, GetDoctorsResponse } from './get_doctors.response';
+import { Doctor } from 'src/domain/doctor/entities/doctor.entity';
 
 /**
  * Handler for retrieving doctors in a clinic with optional filtering
@@ -67,35 +68,40 @@ export class GetDoctorsHandler {
     }
 
     // Get doctors based on filters
-    let doctors;
+    let doctors: Doctor[] = [];
     if (query.departmentId) {
       // Get doctors filtered by department
-      doctors = await this.doctorRepository.findByDepartment(
+      const departmentDoctors = await this.doctorRepository.findByDepartment(
         query.clinicId,
         query.departmentId,
       );
+      doctors = departmentDoctors;
       this.logger.debug(
         `Found ${doctors.length} doctors in department: ${query.departmentId}`,
       );
     } else if (query.roomId) {
       // Get doctors filtered by room
-      doctors = await this.doctorRepository.findByRoom(
+      const roomDoctors = await this.doctorRepository.findByRoom(
         query.clinicId,
         query.roomId,
       );
+      doctors = roomDoctors;
       this.logger.debug(
         `Found ${doctors.length} doctors assigned to room: ${query.roomId}`,
       );
     } else {
       // Get all doctors for the clinic
-      doctors = await this.doctorRepository.findAll(query.clinicId);
+      const allDoctors = await this.doctorRepository.findAll(query.clinicId);
+      doctors = allDoctors;
       this.logger.debug(
         `Found ${doctors.length} doctors in clinic: ${query.clinicId}`,
       );
     }
 
     // Map to DTOs
-    const doctorDtos = doctors.map((doctor) => new DoctorDto(doctor));
+    const doctorDtos: DoctorDto[] = doctors.map(
+      (doctor: Doctor) => new DoctorDto(doctor),
+    );
 
     return new GetDoctorsResponse(doctorDtos);
   }

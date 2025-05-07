@@ -26,6 +26,16 @@ import { GetPatientProfileHandler } from 'src/usecases//patients/queries/get_pat
 import { GetPatientProfileQuery } from 'src/usecases//patients/queries/get_patient_profile/get_patient_profile.query';
 import { PatientFirebaseAuthGuard } from 'src/infrastructure/auth/guards/patient_firebase_auth.guard';
 
+/**
+ * Interface for patient authenticated request
+ */
+interface PatientAuthenticatedRequest extends Request {
+  patient: {
+    id: string;
+    // 其他可能的患者屬性
+  };
+}
+
 @ApiTags('patient-auth')
 @Controller('api/v1/patient/auth')
 export class PatientAuthController {
@@ -88,9 +98,10 @@ export class PatientAuthController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Unauthorized',
   })
-  async getProfile(@Req() req) {
+  async getProfile(@Req() req: PatientAuthenticatedRequest) {
     // req.patient is set by PatientFirebaseAuthGuard
-    const query = new GetPatientProfileQuery(req.patient.id);
+    const patientId: string = req.patient.id;
+    const query = new GetPatientProfileQuery(patientId);
     return await this.getPatientProfileHandler.execute(query);
   }
 }

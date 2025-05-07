@@ -21,6 +21,16 @@ import { GetDoctorsQuery } from '../../../usecases/doctors/queries/get_doctors/g
 import { DoctorsResponseDto } from './dto/doctors.dto';
 
 /**
+ * Interface for authenticated user request
+ */
+interface AuthenticatedRequest extends Request {
+  user: {
+    id: string;
+    selectedClinicId: string;
+  };
+}
+
+/**
  * Controller for doctor-related endpoints
  */
 @ApiTags('doctors')
@@ -59,7 +69,7 @@ export class DoctorsController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiNotFoundResponse({ description: 'Clinic or department not found' })
   async getDoctors(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Query('departmentId') departmentId?: string,
     @Query('roomId') roomId?: string,
   ): Promise<DoctorsResponseDto> {
@@ -68,7 +78,7 @@ export class DoctorsController {
     );
 
     // Extract clinic ID from the authenticated user's context
-    const clinicId = req.user.selectedClinicId;
+    const clinicId: string = req.user.selectedClinicId;
 
     if (!clinicId) {
       this.logger.warn('No clinic selected for user');

@@ -3,7 +3,6 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import { DateTimeInterceptor } from './infrastructure/common/services/datetime.interceptor';
 
 async function bootstrap() {
   // 設置應用程式時區
@@ -79,4 +78,4 @@ async function bootstrap() {
   console.log(`Application is running on: ${await app.getUrl()}`);
 }
 
-bootstrap();
+void bootstrap();

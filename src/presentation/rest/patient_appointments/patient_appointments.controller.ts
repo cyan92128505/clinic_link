@@ -13,7 +13,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
-  Inject,
+  // 移除未使用的 Inject
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -46,6 +46,17 @@ import { GetPatientAppointmentByIdQuery } from 'src/usecases/patient_appointment
 import { LinkPatientToClinicCommand } from 'src/usecases/patient_clinics/commands/link_patient_to_clinic/link_patient_to_clinic.command';
 import { AppointmentSource } from 'src/domain/appointment/value_objects/appointment.enum';
 
+// 定義 Request 中的 Patient 類型
+interface Patient {
+  id: string;
+  [key: string]: any;
+}
+
+// 定義包含 Patient 的 Request 類型
+interface RequestWithPatient extends Request {
+  patient: Patient;
+}
+
 @ApiTags('patient-appointments')
 @Controller('patient/appointments')
 @UseGuards(PatientFirebaseAuthGuard)
@@ -77,7 +88,7 @@ export class PatientAppointmentsController {
     type: PatientAppointmentListResponseDto,
   })
   async getPatientAppointments(
-    @Req() req,
+    @Req() req: RequestWithPatient,
     @Query('clinicId') clinicId?: string,
   ) {
     // Create query with patient ID (from auth guard) and optional clinic filter
@@ -98,7 +109,7 @@ export class PatientAppointmentsController {
     type: PatientAppointmentResponseDto,
   })
   async createPatientAppointment(
-    @Req() req,
+    @Req() req: RequestWithPatient,
     @Body() dto: CreatePatientAppointmentDto,
   ) {
     // Ensure patient is linked to the clinic first
@@ -110,8 +121,12 @@ export class PatientAppointmentsController {
       );
 
       await this.commandBus.execute(linkCommand);
-    } catch (error) {
-      if (error.message.includes('Clinic not found')) {
+    } catch (error: unknown) {
+      // 使用類型守衛處理錯誤
+      if (
+        error instanceof Error &&
+        error.message.includes('Clinic not found')
+      ) {
         throw new NotFoundException('Clinic not found');
       }
       // For other errors related to linking, we can still proceed with appointment creation
@@ -157,7 +172,7 @@ export class PatientAppointmentsController {
     description: 'Appointment not found',
   })
   async getAppointmentById(
-    @Req() req,
+    @Req() req: RequestWithPatient,
     @Param('id') id: string,
     @Query('clinicId') clinicId?: string,
   ) {
@@ -179,12 +194,14 @@ export class PatientAppointmentsController {
 
     try {
       return await this.getPatientAppointmentByIdHandler.execute(query);
-    } catch (error) {
-      if (
-        error.message.includes('Appointment not found') ||
-        error.message.includes('not authorized')
-      ) {
-        throw new NotFoundException('Appointment not found');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (
+          error.message.includes('Appointment not found') ||
+          error.message.includes('not authorized')
+        ) {
+          throw new NotFoundException('Appointment not found');
+        }
       }
       throw error;
     }
@@ -210,7 +227,7 @@ export class PatientAppointmentsController {
     description: 'Appointment not found',
   })
   async updateAppointment(
-    @Req() req,
+    @Req() req: RequestWithPatient,
     @Param('id') id: string,
     @Body() dto: UpdatePatientAppointmentDto,
   ) {
@@ -226,15 +243,17 @@ export class PatientAppointmentsController {
 
     try {
       return await this.updatePatientAppointmentHandler.execute(command);
-    } catch (error) {
-      if (
-        error.message.includes('Appointment not found') ||
-        error.message.includes('not authorized')
-      ) {
-        throw new NotFoundException('Appointment not found');
-      }
-      if (error.message.includes('cannot be updated')) {
-        throw new ForbiddenException('Appointment cannot be updated');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (
+          error.message.includes('Appointment not found') ||
+          error.message.includes('not authorized')
+        ) {
+          throw new NotFoundException('Appointment not found');
+        }
+        if (error.message.includes('cannot be updated')) {
+          throw new ForbiddenException('Appointment cannot be updated');
+        }
       }
       throw error;
     }
@@ -264,7 +283,7 @@ export class PatientAppointmentsController {
     description: 'Appointment not found',
   })
   async cancelAppointment(
-    @Req() req,
+    @Req() req: RequestWithPatient,
     @Param('id') id: string,
     @Query('clinicId') clinicId: string,
   ) {
@@ -282,15 +301,17 @@ export class PatientAppointmentsController {
 
     try {
       await this.cancelPatientAppointmentHandler.execute(command);
-    } catch (error) {
-      if (
-        error.message.includes('Appointment not found') ||
-        error.message.includes('not authorized')
-      ) {
-        throw new NotFoundException('Appointment not found');
-      }
-      if (error.message.includes('cannot be cancelled')) {
-        throw new ForbiddenException('Appointment cannot be cancelled');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (
+          error.message.includes('Appointment not found') ||
+          error.message.includes('not authorized')
+        ) {
+          throw new NotFoundException('Appointment not found');
+        }
+        if (error.message.includes('cannot be cancelled')) {
+          throw new ForbiddenException('Appointment cannot be cancelled');
+        }
       }
       throw error;
     }

@@ -1,5 +1,4 @@
 import { Clinic } from 'src/domain/clinic/entities/clinic.entity';
-import { Role } from 'src/domain/user/value_objects/role.enum';
 
 // Response DTO for retrieving a specific user's clinics
 export class GetUserClinicsByIdResponse {
@@ -53,12 +52,6 @@ export class GetUserClinicsByIdResponse {
         updatedAt: clinic.updatedAt,
       })),
     };
-  }
-
-  // Method to get user's role in the specified clinic
-  getUserClinicRole(clinicId: string): Role | null {
-    // Placeholder method - would typically be implemented in the repository layer
-    return null;
   }
 
   // Static method to create response from handler result

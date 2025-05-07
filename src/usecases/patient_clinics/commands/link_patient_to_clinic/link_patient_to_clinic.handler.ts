@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LinkPatientToClinicCommand } from './link_patient_to_clinic.command';
 import { LinkPatientToClinicResponse } from './link_patient_to_clinic.response';

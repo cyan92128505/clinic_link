@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { GetPatientClinicInfoQuery } from './get_patient_clinic_info.query';
 import { GetPatientClinicInfoResponse } from './get_patient_clinic_info.response';
 import { IPatientRepository } from 'src/domain/patient/interfaces/patient.repository.interface';

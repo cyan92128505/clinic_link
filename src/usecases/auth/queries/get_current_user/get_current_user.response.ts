@@ -9,19 +9,19 @@ export class GetCurrentUserResponse {
     description: 'User ID',
     example: 'cl9ebqhxk0000dsr3xxxx1c1s',
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({
     description: 'User email',
     example: 'user@example.com',
   })
-  email: string;
+  email!: string;
 
   @ApiProperty({
     description: 'User name',
     example: 'John Doe',
   })
-  name: string;
+  name!: string;
 
   @ApiProperty({
     description: 'User phone',
@@ -40,7 +40,7 @@ export class GetCurrentUserResponse {
     description: 'Whether the user is active',
     example: true,
   })
-  isActive: boolean;
+  isActive!: boolean;
 
   @ApiProperty({
     description: 'Last login time',
@@ -65,7 +65,7 @@ export class GetCurrentUserResponse {
       },
     },
   })
-  clinics: {
+  clinics!: {
     id: string;
     name: string;
     role: Role;
@@ -75,5 +75,5 @@ export class GetCurrentUserResponse {
     description: 'Account created time',
     example: '2023-10-01T00:00:00Z',
   })
-  createdAt: Date;
+  createdAt!: Date;
 }

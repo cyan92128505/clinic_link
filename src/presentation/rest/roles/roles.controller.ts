@@ -7,7 +7,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/infrastructure/auth/guards/jwt_auth.guard'; // 修正路徑
+import { JwtAuthGuard } from 'src/infrastructure/auth/guards/jwt_auth.guard';
 import { GetAllRolesQuery } from 'src/usecases/roles/queries/get_all_roles/get_all_roles.query';
 import { GetAllRolesResponse } from 'src/usecases/roles/queries/get_all_roles/get_all_roles.response';
 import {
@@ -15,6 +15,15 @@ import {
   GetRolesQueryDto,
   GetSimpleRolesResponseDto,
 } from './dto/roles.dto';
+import { Role } from 'src/domain/user/value_objects/role.enum';
+
+// 定義 Request 的使用者型別
+interface RequestWithUser extends Request {
+  user: {
+    id: string;
+    selectedClinicRole: Role;
+  };
+}
 
 @ApiTags('roles')
 @Controller('api/v1/roles')
@@ -40,7 +49,7 @@ export class RolesController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async getAllRoles(
     @Query() query: GetRolesQueryDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ): Promise<GetAllRolesResponseDto | GetSimpleRolesResponseDto> {
     // Create query with user context for access control
     const getAllRolesQuery = new GetAllRolesQuery({
@@ -49,7 +58,10 @@ export class RolesController {
     });
 
     // Execute the query
-    const result = await this.queryBus.execute(getAllRolesQuery);
+    const result = await this.queryBus.execute<
+      GetAllRolesQuery,
+      GetAllRolesResponse
+    >(getAllRolesQuery);
 
     // Create a proper response object from the result
     const response = new GetAllRolesResponse({

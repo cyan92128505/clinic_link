@@ -3,8 +3,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetClinicUsersQuery } from './get_clinic_users.query';
 import { IUserRepository } from 'src/domain/user/interfaces/user.repository.interface';
 import { IClinicRepository } from 'src/domain/clinic/interfaces/clinic.repository.interface';
-import { Role } from 'src/domain/user/value_objects/role.enum';
-import { User } from 'src/domain/user/entities/user.entity';
+import { Role, RoleUtils } from 'src/domain/user/value_objects/role.enum';
 
 @Injectable()
 @QueryHandler(GetClinicUsersQuery)
@@ -43,8 +42,11 @@ export class GetClinicUsersHandler
       );
     }
 
+    const requestedByUserRole =
+      RoleUtils.fromString(requestedBy.userRole) ?? Role.RECEPTIONIST;
+
     // Additional check for Clinic Admin: can only view their own clinic
-    if (requestedBy.userRole === Role.CLINIC_ADMIN) {
+    if (requestedByUserRole === Role.CLINIC_ADMIN) {
       const adminClinics = await this.userRepository.findByClinic(clinicId);
       const isAdminOfClinic = adminClinics.some(
         (adminUser) => adminUser.id === requestedBy.userId,

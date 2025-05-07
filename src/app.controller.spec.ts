@@ -13,9 +13,9 @@ describe('AppController', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn((key: string, defaultValue: any) => {
+            get: jest.fn((key: string, defaultValue: unknown) => {
               // Mock implementation of ConfigService
-              const configs = {
+              const configs: Record<string, string> = {
                 BASE_URL: 'http://localhost:3000',
                 NODE_ENV: 'test',
                 APP_VERSION: '1.0.0',
@@ -35,9 +35,25 @@ describe('AppController', () => {
     it('should return welcome message with correct data', () => {
       // Mock the date to get a consistent timestamp for testing
       const mockDate = new Date('2025-04-26T12:00:00Z');
-      jest.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
+
+      // Use spyOn instead of direct replacement of global Date
+      jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
+
+      // Verify configService is used correctly
+      const spyConfigGet = jest.spyOn(configService, 'get');
 
       const result = appController.getWelcome();
+
+      // Verify that configService.get was called with expected parameters
+      expect(spyConfigGet).toHaveBeenCalledWith(
+        'APP_VERSION',
+        expect.any(String),
+      );
+      expect(spyConfigGet).toHaveBeenCalledWith('NODE_ENV', 'development');
+      expect(spyConfigGet).toHaveBeenCalledWith(
+        'BASE_URL',
+        'http://localhost:3000',
+      );
 
       expect(result).toEqual({
         app: 'Clinic Link API',

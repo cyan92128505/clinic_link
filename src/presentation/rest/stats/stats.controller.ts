@@ -5,7 +5,7 @@ import {
   UseGuards,
   Request,
   Query,
-  ParseDatePipe,
+  Inject,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,8 +19,25 @@ import {
 import { JwtAuthGuard } from '../../../infrastructure/auth/guards/jwt_auth.guard';
 import { GetDashboardStatsQuery } from '../../../usecases/stats/queries/get_dashboard_stats/get_dashboard_stats.query';
 import { DashboardStatsResponseDto } from './dto/stats.dto';
+import { Role } from '../../../domain/user/value_objects/role.enum';
 import { GetDashboardStatsResponse } from '../../../usecases/stats/queries/get_dashboard_stats/get_dashboard_stats.response';
-import { Inject, Injectable } from '@nestjs/common';
+
+// 定義請求物件型別
+interface RequestWithUser {
+  user: {
+    id: string;
+    selectedClinicId: string;
+    clinics?: Array<{
+      clinicId: string;
+      role: Role;
+    }>;
+  };
+}
+
+// 定義處理器介面
+interface GetDashboardStatsHandler {
+  execute(query: GetDashboardStatsQuery): Promise<GetDashboardStatsResponse>;
+}
 
 /**
  * Controller for statistics-related endpoints
@@ -33,9 +50,8 @@ export class StatsController {
   private readonly logger = new Logger(StatsController.name);
 
   constructor(
-    // 修正：使用 Inject 來注入服務
     @Inject('GetDashboardStatsHandler')
-    private readonly dashboardStatsHandler: any, // 或者定義一個界面來替代 any
+    private readonly dashboardStatsHandler: GetDashboardStatsHandler,
   ) {}
 
   /**
@@ -58,7 +74,7 @@ export class StatsController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiNotFoundResponse({ description: 'Clinic not found' })
   async getDashboardStats(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Query('date') dateString?: string,
   ): Promise<DashboardStatsResponseDto> {
     // Extract clinic ID from the authenticated user's context
@@ -80,10 +96,15 @@ export class StatsController {
       this.logger.debug('Getting dashboard statistics for today');
     }
 
+    // 取得使用者角色，確保不為 undefined
+    const userRole =
+      req.user.clinics?.find((c) => c.clinicId === clinicId)?.role ||
+      Role.STAFF;
+
     // Create requestedBy information for access control
     const requestedBy = {
       userId: req.user.id,
-      userRole: req.user.clinics?.find((c) => c.clinicId === clinicId)?.role,
+      userRole: userRole, // 確保永遠有值
     };
 
     // Create query and execute handler
@@ -95,7 +116,7 @@ export class StatsController {
       requestedBy,
     );
 
-    // 修正：使用正確的方法名稱
+    // 執行查詢並取得結果
     const response = await this.dashboardStatsHandler.execute(query);
 
     // Map to response DTO with additional calculated fields

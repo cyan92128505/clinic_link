@@ -6,7 +6,7 @@ import {
   IsISO8601,
   IsUUID,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { Transform, Type, TransformFnParams } from 'class-transformer';
 import {
   AppointmentStatus,
   AppointmentSource,
@@ -20,7 +20,7 @@ export class CreateAppointmentDto {
   })
   @IsString()
   @IsUUID()
-  patientId: string;
+  patientId!: string; // 使用 ! 修飾符表示這是必填屬性，但在建構時可能不會有值
 
   @ApiPropertyOptional({
     description: 'Doctor ID',
@@ -148,9 +148,9 @@ export class GetAppointmentsQueryDto {
   })
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => {
+  @Transform(({ value }: TransformFnParams): string | undefined => {
     // Validate and normalize date string
-    if (!value) return undefined;
+    if (!value || typeof value !== 'string') return undefined;
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
     if (datePattern.test(value)) {
       return value;
@@ -175,9 +175,9 @@ export class GetAppointmentsQueryDto {
   @IsOptional()
   @IsISO8601()
   @Type(() => Date)
-  @Transform(({ value }) => {
+  @Transform(({ value }: TransformFnParams): Date | undefined => {
     // Transform to start of day in Taiwan timezone
-    if (!value) return undefined;
+    if (!value || !(value instanceof Date)) return undefined;
     const date = new Date(value);
     return new Date(date.setHours(0, 0, 0, 0));
   })
@@ -190,9 +190,9 @@ export class GetAppointmentsQueryDto {
   @IsOptional()
   @IsISO8601()
   @Type(() => Date)
-  @Transform(({ value }) => {
+  @Transform(({ value }: TransformFnParams): Date | undefined => {
     // Transform to end of day in Taiwan timezone
-    if (!value) return undefined;
+    if (!value || !(value instanceof Date)) return undefined;
     const date = new Date(value);
     return new Date(date.setHours(23, 59, 59, 999));
   })

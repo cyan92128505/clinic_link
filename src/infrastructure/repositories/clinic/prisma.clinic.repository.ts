@@ -3,6 +3,18 @@ import { PrismaService } from '../../common/database/prisma/prisma.service';
 import { IClinicRepository } from '../../../domain/clinic/interfaces/clinic.repository.interface';
 import { Clinic } from '../../../domain/clinic/entities/clinic.entity';
 
+interface PrismaClinic {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  email: string | null;
+  logo: string | null;
+  settings: any;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 @Injectable()
 export class PrismaClinicRepository implements IClinicRepository {
   private readonly logger = new Logger(PrismaClinicRepository.name);
@@ -21,12 +33,15 @@ export class PrismaClinicRepository implements IClinicRepository {
       // Map Prisma model to domain entity
       return clinics.map((clinic) => this.mapToDomainEntity(clinic));
     } catch (error) {
+      const { errorMessage, errorStack } = this.processError(error);
       this.logger.error(
-        `Error finding all clinics: ${error.message}`,
-        error.stack,
+        `Error finding all clinics: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
+
+    return [];
   }
 
   /**
@@ -46,9 +61,11 @@ export class PrismaClinicRepository implements IClinicRepository {
 
       return this.mapToDomainEntity(clinic);
     } catch (error) {
+      const { errorMessage, errorStack } = this.processError(error);
+
       this.logger.error(
-        `Error finding clinic by ID: ${error.message}`,
-        error.stack,
+        `Error finding clinic by ID: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -67,7 +84,7 @@ export class PrismaClinicRepository implements IClinicRepository {
           phone: clinic.phone,
           email: clinic.email,
           logo: clinic.logo,
-          settings: clinic.settings as any,
+          settings: clinic.settings,
           createdAt: clinic.createdAt,
           updatedAt: clinic.updatedAt,
         },
@@ -75,7 +92,9 @@ export class PrismaClinicRepository implements IClinicRepository {
 
       return this.mapToDomainEntity(createdClinic);
     } catch (error) {
-      this.logger.error(`Error creating clinic: ${error.message}`, error.stack);
+      const { errorMessage, errorStack } = this.processError(error);
+
+      this.logger.error(`Error creating clinic: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -86,7 +105,7 @@ export class PrismaClinicRepository implements IClinicRepository {
   async update(id: string, data: Partial<Clinic>): Promise<Clinic> {
     try {
       // Cast settings to any for prisma JSON field
-      const updateData: any = { ...data };
+      const updateData = { ...data };
 
       const updatedClinic = await this.prisma.clinic.update({
         where: {
@@ -97,7 +116,9 @@ export class PrismaClinicRepository implements IClinicRepository {
 
       return this.mapToDomainEntity(updatedClinic);
     } catch (error) {
-      this.logger.error(`Error updating clinic: ${error.message}`, error.stack);
+      const { errorMessage, errorStack } = this.processError(error);
+
+      this.logger.error(`Error updating clinic: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -115,7 +136,9 @@ export class PrismaClinicRepository implements IClinicRepository {
 
       return deletedClinic != null;
     } catch (error) {
-      this.logger.error(`Error deleting clinic: ${error.message}`, error.stack);
+      const { errorMessage, errorStack } = this.processError(error);
+
+      this.logger.error(`Error deleting clinic: ${errorMessage}`, errorStack);
       return false;
     }
   }
@@ -140,26 +163,46 @@ export class PrismaClinicRepository implements IClinicRepository {
         this.mapToDomainEntity(userClinic.clinic),
       );
     } catch (error) {
+      const { errorMessage, errorStack } = this.processError(error);
+
       this.logger.error(
-        `Error finding clinics by user ID: ${error.message}`,
-        error.stack,
+        `Error finding clinics by user ID: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
   }
 
   // Helper method to map Prisma model to domain entity
-  private mapToDomainEntity(prismaClinic: any): Clinic {
+  private mapToDomainEntity(prismaClinic: PrismaClinic): Clinic {
     return new Clinic({
       id: prismaClinic.id,
       name: prismaClinic.name,
       address: prismaClinic.address,
       phone: prismaClinic.phone,
-      email: prismaClinic.email,
-      logo: prismaClinic.logo,
-      settings: prismaClinic.settings,
+      email: prismaClinic.email!,
+      logo: prismaClinic.logo!,
+      settings: prismaClinic.settings as Record<string, any>,
       createdAt: prismaClinic.createdAt,
       updatedAt: prismaClinic.updatedAt,
     });
+  }
+
+  private processError(error: unknown): {
+    errorMessage: string;
+    errorStack: string | undefined;
+  } {
+    const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+    const errorStack = this.isError(error) ? error.stack : undefined;
+
+    this.logger.error(`Error finding all clinics: ${errorMessage}`, errorStack);
+    return {
+      errorMessage,
+      errorStack,
+    };
+  }
+
+  private isError(error: unknown): error is Error {
+    return error instanceof Error;
   }
 }

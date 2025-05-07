@@ -9,7 +9,6 @@ import {
   UseGuards,
   NotFoundException,
   ConflictException,
-  BadRequestException,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -115,7 +114,7 @@ export class PatientsController {
         .filter((item) => item.patient != null)
         .map((item) => this.mapToPatientDto(item.patient!, item.patientClinic)),
       meta: {
-        total: result.pagination.total.length,
+        total: result.pagination.total,
         page: result.pagination.page,
         limit: result.pagination.limit,
         totalPages: result.pagination.totalPages,
@@ -172,8 +171,11 @@ export class PatientsController {
 
       // Transform the result to match the expected response format
       return this.mapFromCreatePatientResponse(result);
-    } catch (error) {
-      if (error.message?.includes('UNIQUE constraint failed')) {
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        error.message?.includes('UNIQUE constraint failed')
+      ) {
         throw new ConflictException(
           'Patient with this national ID already exists',
         );
@@ -215,8 +217,8 @@ export class PatientsController {
 
       // Transform the result to match the expected response format
       return this.mapToPatientDto(result.patient, result.patientClinic);
-    } catch (error) {
-      if (error.message?.includes('not found')) {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message?.includes('not found')) {
         throw new NotFoundException(
           `Patient with ID ${patientId} not found in this clinic`,
         );
@@ -265,7 +267,7 @@ export class PatientsController {
       );
 
       // Execute the command handler
-      const result = await this.updateClinicPatientHandler.execute(command);
+      await this.updateClinicPatientHandler.execute(command);
 
       // After update, fetch the updated patient data
       const query = new GetClinicPatientByIdQuery(clinicId, patientId);
@@ -277,13 +279,16 @@ export class PatientsController {
         updatedPatientResult.patient,
         updatedPatientResult.patientClinic,
       );
-    } catch (error) {
-      if (error.message?.includes('not found')) {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message?.includes('not found')) {
         throw new NotFoundException(
           `Patient with ID ${patientId} not found in this clinic`,
         );
       }
-      if (error.message?.includes('UNIQUE constraint failed')) {
+      if (
+        error instanceof Error &&
+        error.message?.includes('UNIQUE constraint failed')
+      ) {
         throw new ConflictException(
           'Patient with this national ID already exists',
         );

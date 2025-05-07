@@ -13,6 +13,16 @@ import { GetDepartmentsQuery } from '../../../usecases/departments/queries/get_d
 import { DepartmentsResponseDto } from './dto/departments.dto';
 
 /**
+ * Interface for authenticated user request
+ */
+interface AuthenticatedRequest extends Request {
+  user: {
+    id: string;
+    selectedClinicId: string;
+  };
+}
+
+/**
  * Controller for department-related endpoints
  */
 @ApiTags('departments')
@@ -36,11 +46,13 @@ export class DepartmentsController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiNotFoundResponse({ description: 'Clinic not found' })
-  async getDepartments(@Request() req): Promise<DepartmentsResponseDto> {
+  async getDepartments(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<DepartmentsResponseDto> {
     this.logger.debug('Getting departments for current clinic');
 
     // Extract clinic ID from the authenticated user's context
-    const clinicId = req.user.selectedClinicId;
+    const clinicId: string = req.user.selectedClinicId;
 
     if (!clinicId) {
       this.logger.warn('No clinic selected for user');

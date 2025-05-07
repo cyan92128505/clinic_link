@@ -3,7 +3,6 @@ import {
   Post,
   Body,
   Get,
-  UseGuards,
   Req,
   HttpCode,
   HttpStatus,
@@ -14,7 +13,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
+
 import { Public } from '../../../infrastructure/auth/decorators/public.decorator';
 import { BaseController } from '../../common/base.controller';
 import { LoginCommand } from '../../../usecases/auth/commands/login/login.command';
@@ -26,6 +25,13 @@ import { SelectClinicCommand } from '../../../usecases/auth/commands/select_clin
 import { SelectClinicHandler } from '../../../usecases/auth/commands/select_clinic/select_clinic.handler';
 import { VerifyFirebaseTokenCommand } from '../../../usecases/auth/commands/verify_firebase_token/verify_firebase_token.command';
 import { VerifyFirebaseTokenHandler } from '../../../usecases/auth/commands/verify_firebase_token/verify_firebase_token.handler';
+
+// 定義認證請求介面
+interface AuthenticatedRequest extends Request {
+  user: {
+    id: string;
+  };
+}
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -95,9 +101,10 @@ export class AuthController extends BaseController {
     description: 'User retrieved successfully',
   })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
-  async getCurrentUser(@Req() request) {
+  async getCurrentUser(@Req() request: AuthenticatedRequest) {
+    const userId = request.user.id;
     const result = await this.getCurrentUserHandler.execute({
-      userId: request.user.id,
+      userId,
     });
     return this.success(result, 'User retrieved successfully');
   }
@@ -113,10 +120,14 @@ export class AuthController extends BaseController {
     status: HttpStatus.FORBIDDEN,
     description: 'User does not have access to this clinic',
   })
-  async selectClinic(@Body() command: SelectClinicCommand, @Req() request) {
+  async selectClinic(
+    @Body() command: SelectClinicCommand,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    const userId = request.user.id;
     const result = await this.selectClinicHandler.execute({
       ...command,
-      userId: request.user.id,
+      userId,
     });
     return this.success(result, 'Clinic selected successfully');
   }

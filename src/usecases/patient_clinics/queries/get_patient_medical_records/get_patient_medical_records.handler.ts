@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { GetPatientMedicalRecordsQuery } from './get_patient_medical_records.query';
 import {
   GetPatientMedicalRecordsResponse,
@@ -13,6 +8,42 @@ import { IPatientRepository } from 'src/domain/patient/interfaces/patient.reposi
 import { IPatientClinicRepository } from 'src/domain/patient/interfaces/patient_clinic.repository.interface';
 import { IClinicRepository } from 'src/domain/clinic/interfaces/clinic.repository.interface';
 import { PatientClinicRelationNotFoundException } from 'src/domain/patient/exceptions/patient.exceptions';
+
+// Define Medication interface to match MedicalRecordDto
+interface Medication {
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions?: string;
+}
+
+// Define Prescription interface to match MedicalRecordDto
+interface Prescription {
+  medications: Medication[];
+}
+
+// Define Medical Record interface
+interface MedicalRecord {
+  id: string;
+  appointmentId?: string;
+  recordDate: string; // ISO date string
+  recordType: string;
+  diagnosis: string;
+  symptoms: string[];
+  prescription?: Prescription | string; // Could be string in old format or object in new format
+  treatment: string;
+  notes: string;
+  doctorId: string;
+  doctorName: string;
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
+}
+
+// Define Medical History interface
+interface MedicalHistory {
+  records?: MedicalRecord[];
+}
 
 @Injectable()
 export class GetPatientMedicalRecordsHandler {
@@ -59,14 +90,14 @@ export class GetPatientMedicalRecordsHandler {
     }
 
     // Get medical records from the patient-clinic relationship
-    const medicalHistory = patientClinic.medicalHistory || {};
+    const medicalHistory =
+      (patientClinic.medicalHistory as MedicalHistory) || {};
 
     // Extract records array (assuming the structure is { records: [...] })
-    // If structure is different, this needs to be adapted
-    const allRecords: any[] = medicalHistory.records || [];
+    const allRecords: MedicalRecord[] = medicalHistory.records || [];
 
     // Filter records by date if specified
-    let filteredRecords = [...allRecords];
+    let filteredRecords: MedicalRecord[] = [...allRecords];
 
     if (query.startDate) {
       const startDate = new Date(query.startDate);
@@ -97,22 +128,54 @@ export class GetPatientMedicalRecordsHandler {
     // Slice records for pagination
     const paginatedRecords = filteredRecords.slice(start, end);
 
-    // Map to DTOs
-    const recordDtos: MedicalRecordDto[] = paginatedRecords.map((record) => ({
-      id: record.id,
-      appointmentId: record.appointmentId,
-      recordDate: new Date(record.recordDate),
-      recordType: record.recordType,
-      diagnosis: record.diagnosis,
-      symptoms: record.symptoms,
-      prescription: record.prescription,
-      treatment: record.treatment,
-      notes: record.notes,
-      doctorId: record.doctorId,
-      doctorName: record.doctorName,
-      createdAt: new Date(record.createdAt),
-      updatedAt: new Date(record.updatedAt),
-    }));
+    // Map to DTOs with proper type handling for required fields
+    const recordDtos = paginatedRecords.map((record) => {
+      // Convert prescription to the correct format if needed
+      let prescriptionObject: Prescription = { medications: [] };
+
+      // If prescription exists, convert it to the right format if it's a string
+      if (record.prescription) {
+        if (typeof record.prescription === 'string') {
+          // Convert string prescription to object format with a single medication
+          prescriptionObject = {
+            medications: [
+              {
+                name: record.prescription,
+                dosage: '',
+                frequency: '',
+                duration: '',
+              },
+            ],
+          };
+        } else {
+          // It's already in object format, use it
+          prescriptionObject = record.prescription;
+        }
+      }
+
+      // Create the DTO with all required fields
+      const dto: MedicalRecordDto = {
+        id: record.id,
+        recordDate: new Date(record.recordDate),
+        recordType: record.recordType || '',
+        diagnosis: record.diagnosis || '',
+        symptoms: record.symptoms || [],
+        prescription: prescriptionObject,
+        treatment: record.treatment || '',
+        notes: record.notes || '',
+        doctorId: record.doctorId || '',
+        doctorName: record.doctorName || '',
+        createdAt: new Date(record.createdAt),
+        updatedAt: new Date(record.updatedAt),
+      };
+
+      // Only add appointmentId if it exists
+      if (record.appointmentId) {
+        dto.appointmentId = record.appointmentId;
+      }
+
+      return dto;
+    });
 
     // Return response
     return {

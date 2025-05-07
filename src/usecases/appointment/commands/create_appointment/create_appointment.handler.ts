@@ -54,10 +54,12 @@ export class CreateAppointmentHandler
         await this.appointmentRepository.create(newAppointment);
       return new CreateAppointmentResponse(createdAppointment);
     } catch (error) {
-      this.logger.error(
-        `Failed to create appointment: ${error.message}`,
-        error.stack,
-      );
+      if (error instanceof Error) {
+        this.logger.error(
+          `Failed to create appointment: ${error.message}`,
+          error.stack,
+        );
+      }
       throw new BadRequestException('Failed to create appointment');
     }
   }

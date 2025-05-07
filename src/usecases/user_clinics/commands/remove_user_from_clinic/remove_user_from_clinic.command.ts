@@ -1,5 +1,3 @@
-import { Role } from 'src/domain/user/value_objects/role.enum';
-
 // Command for removing a user from a clinic
 export class RemoveUserFromClinicCommand {
   constructor(

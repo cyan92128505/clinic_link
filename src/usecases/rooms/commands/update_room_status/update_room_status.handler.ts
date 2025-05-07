@@ -3,7 +3,6 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { UpdateRoomStatusCommand } from './update_room_status.command';
 import { IRoomRepository } from 'src/domain/room/interfaces/room.repository.interface';
 import { IClinicRepository } from 'src/domain/clinic/interfaces/clinic.repository.interface';
-import { RoomStatus } from 'src/domain/room/value_objects/room.enum';
 import { Role } from 'src/domain/user/value_objects/role.enum';
 
 @Injectable()
@@ -62,7 +61,7 @@ export class UpdateRoomStatusHandler
     }
 
     // Update room status
-    const updatedRoom = await this.roomRepository.update(roomId, clinicId, {
+    await this.roomRepository.update(roomId, clinicId, {
       status,
       updatedAt: new Date(),
     });

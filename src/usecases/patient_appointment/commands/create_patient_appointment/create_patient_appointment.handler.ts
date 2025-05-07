@@ -65,10 +65,12 @@ export class CreatePatientAppointmentHandler
           updatedAt: new Date(),
         } as PatientClinic);
       } catch (error) {
-        throw new PatientClinicRelationNotFoundException(
-          command.patientId,
-          command.clinicId,
-        );
+        if (error instanceof Error) {
+          throw new PatientClinicRelationNotFoundException(
+            command.patientId,
+            command.clinicId,
+          );
+        }
       }
     } else if (!patientClinic.isActive) {
       throw new BadRequestException(

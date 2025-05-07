@@ -2,9 +2,9 @@ import { BaseEntity } from 'src/domain/common/entities/base.entity';
 import { UserClinic } from './user_clinic.entity';
 
 export class User extends BaseEntity {
-  email: string;
-  password: string;
-  name: string;
+  email!: string;
+  password!: string;
+  name!: string;
   phone?: string;
   avatar?: string;
   isActive: boolean;

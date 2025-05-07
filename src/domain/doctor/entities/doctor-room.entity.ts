@@ -2,8 +2,8 @@
  * DoctorRoom join entity - represents relationship between doctors and rooms
  */
 export class DoctorRoom {
-  doctorId: string;
-  roomId: string;
+  doctorId!: string;
+  roomId!: string;
   createdAt: Date;
 
   constructor(props: Partial<DoctorRoom>) {

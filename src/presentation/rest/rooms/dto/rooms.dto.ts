@@ -14,7 +14,7 @@ export class UpdateRoomStatusDto {
   })
   @IsNotEmpty()
   @IsEnum(RoomStatus)
-  status: RoomStatus;
+  status!: RoomStatus;
 }
 
 /**
@@ -63,13 +63,13 @@ export class RoomWithQueueDto {
     description: 'Room ID',
     example: 'cl9ebqhxk0000dsr3xxxx1c1s',
   })
-  roomId: string;
+  roomId!: string;
 
   @ApiProperty({
     description: 'Room name',
     example: '診間 101',
   })
-  name: string;
+  name!: string;
 
   @ApiProperty({
     description: 'Room description',
@@ -83,13 +83,13 @@ export class RoomWithQueueDto {
     enum: RoomStatus,
     example: RoomStatus.OPEN,
   })
-  status: RoomStatus;
+  status!: RoomStatus;
 
   @ApiProperty({
     description: 'Number of appointments in queue',
     example: 5,
   })
-  queueLength: number;
+  queueLength!: number;
 
   @ApiProperty({
     description: 'Next appointment information',
@@ -111,17 +111,17 @@ export class RoomsWithQueueResponseDto {
     description: 'Clinic ID',
     example: 'cl9ebqhxk0000dsr3xxxx1c1s',
   })
-  clinicId: string;
+  clinicId!: string;
 
   @ApiProperty({
     description: 'Date of queue information',
     example: '2025-05-07T00:00:00.000Z',
   })
-  date: Date;
+  date!: Date;
 
   @ApiProperty({
     description: 'Rooms with queue information',
     type: [RoomWithQueueDto],
   })
-  rooms: RoomWithQueueDto[];
+  rooms!: RoomWithQueueDto[];
 }

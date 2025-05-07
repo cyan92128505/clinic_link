@@ -1,10 +1,10 @@
 import { BaseEntity } from 'src/domain/common/entities/base.entity';
 
 export class ActivityLog extends BaseEntity {
-  clinicId: string;
-  userId: string;
-  action: string;
-  resource: string;
+  clinicId!: string;
+  userId!: string;
+  action!: string;
+  resource!: string;
   resourceId?: string;
   details?: Record<string, any>;
   ipAddress?: string;

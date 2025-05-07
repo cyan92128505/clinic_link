@@ -1,14 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsString,
-  IsOptional,
-  IsBoolean,
-  IsArray,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsBoolean, IsArray } from 'class-validator';
 import { Role } from '../../../../domain/user/value_objects/role.enum';
-import { Transform, Type } from 'class-transformer';
+import { Transform, TransformFnParams } from 'class-transformer';
 
 export class GetUserClinicsQueryDto {
   @ApiPropertyOptional({
@@ -20,9 +13,12 @@ export class GetUserClinicsQueryDto {
   @IsOptional()
   @IsArray()
   @IsEnum(Role, { each: true })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.split(',').map((v) => v.trim()) : value,
-  )
+  @Transform(({ value }: TransformFnParams): Role[] => {
+    if (typeof value === 'string') {
+      return value.split(',').map((v) => v.trim() as Role);
+    }
+    return Array.isArray(value) ? value : [];
+  })
   roles?: Role[];
 
   @ApiPropertyOptional({
@@ -41,25 +37,25 @@ export class UserClinicResponseDto {
     description: 'Clinic ID',
     example: 'cliabcdef0123456789',
   })
-  clinicId: string;
+  clinicId!: string;
 
   @ApiProperty({
     description: 'Clinic name',
     example: 'City General Clinic',
   })
-  name: string;
+  name!: string;
 
   @ApiProperty({
     description: 'Clinic address',
     example: '123 Medical St, Healthcare City',
   })
-  address: string;
+  address!: string;
 
   @ApiProperty({
     description: 'Clinic phone number',
     example: '02-1234-5678',
   })
-  phone: string;
+  phone!: string;
 
   @ApiProperty({
     description: 'Clinic logo URL',
@@ -92,13 +88,13 @@ export class UserClinicDetailedResponseDto extends UserClinicResponseDto {
     description: 'Created date',
     example: '2024-01-01T00:00:00.000Z',
   })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty({
     description: 'Last updated date',
     example: '2024-01-01T00:00:00.000Z',
   })
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 export class GetUserClinicsResponseDto {
@@ -106,13 +102,13 @@ export class GetUserClinicsResponseDto {
     description: 'User ID',
     example: 'usr123456789',
   })
-  userId: string;
+  userId!: string;
 
   @ApiProperty({
     type: [UserClinicResponseDto],
     description: "List of user's clinics",
   })
-  clinics: UserClinicResponseDto[];
+  clinics!: UserClinicResponseDto[];
 }
 
 export class GetUserClinicsDetailedResponseDto {
@@ -120,11 +116,11 @@ export class GetUserClinicsDetailedResponseDto {
     description: 'User ID',
     example: 'usr123456789',
   })
-  userId: string;
+  userId!: string;
 
   @ApiProperty({
     type: [UserClinicDetailedResponseDto],
     description: "List of user's clinics with detailed information",
   })
-  clinics: UserClinicDetailedResponseDto[];
+  clinics!: UserClinicDetailedResponseDto[];
 }

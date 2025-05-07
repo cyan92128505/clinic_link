@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Injectable,
   ExecutionContext,
@@ -33,8 +34,15 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   /**
    * Handle unauthorized access
+   * 保持與 IAuthGuard 介面一致的方法簽名
    */
-  handleRequest(err: any, user: any) {
+  handleRequest<TUser = any>(
+    err: any,
+    user: any,
+    info: any,
+    context: ExecutionContext,
+    status?: any,
+  ): TUser {
     if (err || !user) {
       throw (
         err ||
@@ -43,6 +51,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         )
       );
     }
-    return user;
+
+    // 使用泛型參數作為回傳類型
+    return user as TUser;
   }
 }

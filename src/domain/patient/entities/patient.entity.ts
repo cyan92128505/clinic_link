@@ -4,10 +4,10 @@ import { Gender } from '../value_objects/gender.enum';
 export class Patient extends BaseEntity {
   firebaseUid?: string;
   nationalId?: string;
-  name: string;
+  name!: string;
   birthDate?: Date;
   gender?: Gender;
-  phone: string;
+  phone!: string;
   email?: string;
   address?: string;
   emergencyContact?: string;

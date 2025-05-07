@@ -6,10 +6,26 @@ import * as admin from 'firebase-admin';
 import { IAuthService } from '../../../domain/auth/interfaces/auth_service.interface';
 import { PrismaService } from '../../common/database/prisma/prisma.service';
 
+// 定義使用者介面
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  password?: string; // 改為可選屬性
+  [key: string]: any;
+}
+
+// JWT 載荷介面
+interface JwtPayload {
+  sub: string;
+  email: string;
+  name: string;
+}
+
 @Injectable()
 export class AuthService implements IAuthService {
   private readonly logger = new Logger(AuthService.name);
-  private firebaseApp: admin.app.App;
+  private firebaseApp: admin.app.App | null = null; // 初始化為 null
 
   constructor(
     private jwtService: JwtService,
@@ -45,10 +61,17 @@ export class AuthService implements IAuthService {
             'Firebase credentials not provided, Firebase authentication disabled',
           );
         }
-      } catch (error) {
-        this.logger.error(
-          `Error initializing Firebase Admin SDK: ${error.message}`,
-        );
+      } catch (error: unknown) {
+        // 使用型別斷言
+        if (error instanceof Error) {
+          this.logger.error(
+            `Error initializing Firebase Admin SDK: ${error.message}`,
+          );
+        } else {
+          this.logger.error(
+            'Error initializing Firebase Admin SDK: Unknown error',
+          );
+        }
       }
     } else {
       this.firebaseApp = admin.app();
@@ -58,7 +81,7 @@ export class AuthService implements IAuthService {
   /**
    * Validate user credentials
    */
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(email: string, password: string): Promise<User | null> {
     try {
       const user = await this.prismaService.user.findUnique({
         where: { email },
@@ -90,10 +113,20 @@ export class AuthService implements IAuthService {
       });
 
       // Remove password from returned user object
-      const { password: _, ...result } = user;
-      return result;
-    } catch (error) {
-      this.logger.error(`Error validating user: ${error.message}`, error.stack);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: passwordValue, ...result } = user;
+
+      // 使用型別斷言，確保型別正確
+      return result as unknown as User;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error validating user: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error('Error validating user: Unknown error');
+      }
       return null;
     }
   }
@@ -101,24 +134,31 @@ export class AuthService implements IAuthService {
   /**
    * Generate JWT token
    */
-  async generateToken(user: any): Promise<string> {
-    const payload = {
+  async generateToken(user: User): Promise<string> {
+    const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       name: user.name,
     };
 
-    return this.jwtService.sign(payload);
+    // 使用 await 避免 ESLint 警告
+    return await this.jwtService.signAsync(payload);
   }
 
   /**
    * Verify JWT token
    */
-  async verifyToken(token: string): Promise<any> {
+  async verifyToken(token: string): Promise<JwtPayload | null> {
     try {
-      return this.jwtService.verify(token);
-    } catch (error) {
-      this.logger.error(`Error verifying JWT token: ${error.message}`);
+      // 使用 await 避免 ESLint 警告
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
+      return payload;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(`Error verifying JWT token: ${error.message}`);
+      } else {
+        this.logger.error('Error verifying JWT token: Unknown error');
+      }
       return null;
     }
   }
@@ -126,7 +166,9 @@ export class AuthService implements IAuthService {
   /**
    * Verify Firebase ID token
    */
-  async verifyFirebaseToken(token: string): Promise<any> {
+  async verifyFirebaseToken(
+    token: string,
+  ): Promise<admin.auth.DecodedIdToken | null> {
     try {
       if (!this.firebaseApp) {
         this.logger.error('Firebase Admin SDK not initialized');
@@ -135,8 +177,12 @@ export class AuthService implements IAuthService {
 
       const decodedToken = await this.firebaseApp.auth().verifyIdToken(token);
       return decodedToken;
-    } catch (error) {
-      this.logger.error(`Error verifying Firebase token: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(`Error verifying Firebase token: ${error.message}`);
+      } else {
+        this.logger.error('Error verifying Firebase token: Unknown error');
+      }
       return null;
     }
   }

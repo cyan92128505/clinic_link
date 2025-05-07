@@ -3,12 +3,31 @@ import { PrismaService } from '../../common/database/prisma/prisma.service';
 import { IRoomRepository } from '../../../domain/room/interfaces/room.repository.interface';
 import { Room } from '../../../domain/room/entities/room.entity';
 import { RoomStatus } from '../../../domain/room/value_objects/room.enum';
+import { Prisma } from '@prisma/client';
+
+// 定義 Prisma Room 模型的型別
+interface PrismaRoom {
+  id: string;
+  clinicId: string;
+  name: string;
+  description: string | null;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 @Injectable()
 export class PrismaRoomRepository implements IRoomRepository {
   private readonly logger = new Logger(PrismaRoomRepository.name);
 
   constructor(private prisma: PrismaService) {}
+
+  /**
+   * Helper method to check if an error is an Error object
+   */
+  private isError(error: unknown): error is Error {
+    return error instanceof Error;
+  }
 
   /**
    * Find all rooms in a clinic
@@ -22,12 +41,12 @@ export class PrismaRoomRepository implements IRoomRepository {
         orderBy: [{ name: 'asc' }],
       });
 
-      return rooms.map((room) => this.mapToDomainEntity(room));
-    } catch (error) {
-      this.logger.error(
-        `Error finding all rooms: ${error.message}`,
-        error.stack,
-      );
+      return rooms.map((room) => this.mapToDomainEntity(room as PrismaRoom));
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error finding all rooms: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -48,11 +67,14 @@ export class PrismaRoomRepository implements IRoomRepository {
         return null;
       }
 
-      return this.mapToDomainEntity(room);
-    } catch (error) {
+      return this.mapToDomainEntity(room as PrismaRoom);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding room by ID: ${error.message}`,
-        error.stack,
+        `Error finding room by ID: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -75,9 +97,12 @@ export class PrismaRoomRepository implements IRoomRepository {
         },
       });
 
-      return this.mapToDomainEntity(createdRoom);
-    } catch (error) {
-      this.logger.error(`Error creating room: ${error.message}`, error.stack);
+      return this.mapToDomainEntity(createdRoom as PrismaRoom);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error creating room: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -96,12 +121,15 @@ export class PrismaRoomRepository implements IRoomRepository {
           id,
           clinicId,
         },
-        data,
+        data: data as Prisma.RoomUpdateInput,
       });
 
-      return this.mapToDomainEntity(updatedRoom);
-    } catch (error) {
-      this.logger.error(`Error updating room: ${error.message}`, error.stack);
+      return this.mapToDomainEntity(updatedRoom as PrismaRoom);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error updating room: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -119,8 +147,11 @@ export class PrismaRoomRepository implements IRoomRepository {
       });
 
       return deletedRoom != null;
-    } catch (error) {
-      this.logger.error(`Error deleting room: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error deleting room: ${errorMessage}`, errorStack);
       return false;
     }
   }
@@ -145,11 +176,14 @@ export class PrismaRoomRepository implements IRoomRepository {
         },
       });
 
-      return this.mapToDomainEntity(updatedRoom);
-    } catch (error) {
+      return this.mapToDomainEntity(updatedRoom as PrismaRoom);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error updating room status: ${error.message}`,
-        error.stack,
+        `Error updating room status: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -183,11 +217,14 @@ export class PrismaRoomRepository implements IRoomRepository {
         },
       });
 
-      return rooms.map((room) => this.mapToDomainEntity(room));
-    } catch (error) {
+      return rooms.map((room) => this.mapToDomainEntity(room as PrismaRoom));
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding rooms by doctor: ${error.message}`,
-        error.stack,
+        `Error finding rooms by doctor: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -206,23 +243,26 @@ export class PrismaRoomRepository implements IRoomRepository {
         orderBy: [{ name: 'asc' }],
       });
 
-      return rooms.map((room) => this.mapToDomainEntity(room));
-    } catch (error) {
+      return rooms.map((room) => this.mapToDomainEntity(room as PrismaRoom));
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding rooms by status: ${error.message}`,
-        error.stack,
+        `Error finding rooms by status: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
   }
 
   // Helper method to map Prisma model to domain entity
-  private mapToDomainEntity(prismaRoom: any): Room {
+  private mapToDomainEntity(prismaRoom: PrismaRoom): Room {
     return new Room({
       id: prismaRoom.id,
       clinicId: prismaRoom.clinicId,
       name: prismaRoom.name,
-      description: prismaRoom.description,
+      description: prismaRoom.description || undefined,
       status: prismaRoom.status as RoomStatus,
       createdAt: prismaRoom.createdAt,
       updatedAt: prismaRoom.updatedAt,

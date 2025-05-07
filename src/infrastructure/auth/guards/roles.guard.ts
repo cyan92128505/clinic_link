@@ -7,6 +7,32 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Role } from '@prisma/client';
 import { ROLES_KEY } from '../decorators/roles.decorator';
+import { Request } from 'express';
+
+// 定義使用者類型
+interface UserClinic {
+  id: string;
+  role: Role;
+  // 其他可能屬性
+}
+
+interface User {
+  id: string;
+  clinics: UserClinic[];
+  // 其他使用者屬性
+}
+
+// 擴展 Request 類型
+interface RequestWithUser extends Request {
+  user: User;
+  headers: Request['headers'] & {
+    'x-clinic-id'?: string;
+  };
+  query: {
+    clinicId?: string;
+    [key: string]: any;
+  };
+}
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -27,7 +53,7 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
     const user = request.user;
     const clinicId = request.headers['x-clinic-id'] || request.query.clinicId;
 
@@ -39,12 +65,12 @@ export class RolesGuard implements CanActivate {
     }
 
     // If user is a system ADMIN, allow access to everything
-    if (user.clinics.some((c) => c.role === 'ADMIN')) {
+    if (user.clinics.some((c: UserClinic) => c.role === Role.ADMIN)) {
       return true;
     }
 
     // Check if user has required role for the specified clinic
-    const userClinic = user.clinics.find((c) => c.id === clinicId);
+    const userClinic = user.clinics.find((c: UserClinic) => c.id === clinicId);
     if (!userClinic) {
       throw new ForbiddenException('You do not have access to this clinic');
     }

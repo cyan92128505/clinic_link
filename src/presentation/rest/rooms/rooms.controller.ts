@@ -9,7 +9,6 @@ import {
   UnauthorizedException,
   NotFoundException,
   InternalServerErrorException,
-  Logger,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
@@ -32,6 +31,36 @@ import {
   RoomsWithQueueResponseDto,
 } from './dto/rooms.dto';
 import { BaseController } from 'src/presentation/common/base.controller';
+import { Room } from 'src/domain/room/entities/room.entity';
+import { Appointment } from 'src/domain/appointment/entities/appointment.entity';
+import { RoomStatus } from 'src/domain/room/value_objects/room.enum';
+
+// 定義使用者 DTO 結構
+interface UserDto {
+  id: string;
+  selectedClinicId: string;
+  role: Role;
+}
+
+// 定義更新房間狀態結果 DTO
+interface UpdateRoomStatusResultDto {
+  roomId: string;
+  clinicId: string;
+  previousStatus: RoomStatus;
+  newStatus: RoomStatus;
+  updated: boolean;
+}
+
+// 定義查詢結果型別
+interface RoomsWithQueueResult {
+  rooms: Array<{
+    room: Room;
+    queue: Appointment[];
+    queueLength: number;
+  }>;
+  clinicId: string;
+  date: Date;
+}
 
 @Controller('api/v1/rooms')
 @ApiTags('rooms')
@@ -69,7 +98,7 @@ export class RoomsController extends BaseController {
     Role.STAFF,
   )
   async getRoomsWithQueue(
-    @CurrentUser() user: any,
+    @CurrentUser() user: UserDto,
     @Query() queryDto: GetRoomsQueryDto,
   ) {
     // Check if a clinic is selected
@@ -101,15 +130,24 @@ export class RoomsController extends BaseController {
     );
 
     try {
-      const result = await this.queryBus.execute(query);
+      // 執行查詢並指定回傳型別
+      const result = await this.queryBus.execute<
+        GetRoomsWithQueueQuery,
+        RoomsWithQueueResult
+      >(query);
+
       const response = GetRoomsWithQueueResponse.fromHandler(result);
 
       // Return detailed response for staff, public response for patients
       return response.toDetailedResponse();
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
       this.logger.error(
-        `Error retrieving rooms with queue: ${error.message}`,
-        error.stack,
+        `Error retrieving rooms with queue: ${errorMessage}`,
+        errorStack,
       );
       throw new InternalServerErrorException(
         'Error retrieving rooms information',
@@ -140,7 +178,7 @@ export class RoomsController extends BaseController {
     Role.RECEPTIONIST,
   )
   async updateRoomStatus(
-    @CurrentUser() user: any,
+    @CurrentUser() user: UserDto,
     @Param('roomId') roomId: string,
     @Body() updateRoomStatusDto: UpdateRoomStatusDto,
   ) {
@@ -161,7 +199,11 @@ export class RoomsController extends BaseController {
     );
 
     try {
-      const result = await this.commandBus.execute(command);
+      // 執行命令並取得結果
+      const result = await this.commandBus.execute<
+        UpdateRoomStatusCommand,
+        UpdateRoomStatusResultDto
+      >(command);
 
       // Return result
       return {
@@ -171,13 +213,18 @@ export class RoomsController extends BaseController {
         newStatus: result.newStatus,
         updated: result.updated,
       };
-    } catch (error) {
-      if (error.message?.includes('not found')) {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message?.includes('not found')) {
         throw new NotFoundException(error.message);
       }
+
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
       this.logger.error(
-        `Error updating room status: ${error.message}`,
-        error.stack,
+        `Error updating room status: ${errorMessage}`,
+        errorStack,
       );
       throw new InternalServerErrorException('Error updating room status');
     }

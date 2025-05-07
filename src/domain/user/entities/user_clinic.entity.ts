@@ -4,8 +4,8 @@ import { Role } from '../value_objects/role.enum';
  * UserClinic join entity - represents relationship between users and clinics
  */
 export class UserClinic {
-  userId: string;
-  clinicId: string;
+  userId!: string;
+  clinicId!: string;
   role: Role;
   createdAt: Date;
   updatedAt: Date;

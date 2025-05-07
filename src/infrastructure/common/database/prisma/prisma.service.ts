@@ -2,6 +2,15 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 
+// 為 query 事件定義介面
+interface QueryEvent {
+  timestamp: number;
+  query: string;
+  params: string;
+  duration: number;
+  target: string;
+}
+
 @Injectable()
 export class PrismaService
   extends PrismaClient
@@ -10,9 +19,6 @@ export class PrismaService
   constructor(private configService: ConfigService) {
     const hideHealthCheckQueries =
       configService.get('PRISMA_HIDE_HEALTH_CHECK_QUERIES') === 'true';
-    const connectionLimit = parseInt(
-      configService.get('PRISMA_CONNECTION_LIMIT', '5'),
-    );
 
     super({
       datasources: {
@@ -41,7 +47,7 @@ export class PrismaService
   async onModuleInit() {
     if (this.configService.get('NODE_ENV') === 'development') {
       // Only log slow queries in development
-      this.$on('query' as never, (e: any) => {
+      this.$on('query' as never, (e: QueryEvent) => {
         if (e.duration > 200) {
           // Only log queries taking more than 200ms
           console.log(`Slow query (${e.duration}ms): ${e.query}`);

@@ -1,5 +1,3 @@
-import { AppointmentStatus } from 'src/domain/appointment/value_objects/appointment.enum';
-
 // Query to retrieve dashboard statistics
 export class GetDashboardStatsQuery {
   constructor(

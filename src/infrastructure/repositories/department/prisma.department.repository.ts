@@ -3,11 +3,29 @@ import { PrismaService } from '../../common/database/prisma/prisma.service';
 import { IDepartmentRepository } from '../../../domain/department/interfaces/department.repository.interface';
 import { Department } from '../../../domain/department/entities/department.entity';
 
+// 定義 Prisma Department 模型的型別
+interface PrismaDepartment {
+  id: string;
+  clinicId: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 @Injectable()
 export class PrismaDepartmentRepository implements IDepartmentRepository {
   private readonly logger = new Logger(PrismaDepartmentRepository.name);
 
   constructor(private prisma: PrismaService) {}
+
+  /**
+   * Helper method to check if an error is an Error object
+   */
+  private isError(error: unknown): error is Error {
+    return error instanceof Error;
+  }
 
   /**
    * Find all departments in a clinic
@@ -22,12 +40,15 @@ export class PrismaDepartmentRepository implements IDepartmentRepository {
       });
 
       return departments.map((department) =>
-        this.mapToDomainEntity(department),
+        this.mapToDomainEntity(department as PrismaDepartment),
       );
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding all departments: ${error.message}`,
-        error.stack,
+        `Error finding all departments: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -49,11 +70,14 @@ export class PrismaDepartmentRepository implements IDepartmentRepository {
         return null;
       }
 
-      return this.mapToDomainEntity(department);
-    } catch (error) {
+      return this.mapToDomainEntity(department as PrismaDepartment);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding department by ID: ${error.message}`,
-        error.stack,
+        `Error finding department by ID: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -76,11 +100,14 @@ export class PrismaDepartmentRepository implements IDepartmentRepository {
         },
       });
 
-      return this.mapToDomainEntity(createdDepartment);
-    } catch (error) {
+      return this.mapToDomainEntity(createdDepartment as PrismaDepartment);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error creating department: ${error.message}`,
-        error.stack,
+        `Error creating department: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -103,11 +130,14 @@ export class PrismaDepartmentRepository implements IDepartmentRepository {
         data,
       });
 
-      return this.mapToDomainEntity(updatedDepartment);
-    } catch (error) {
+      return this.mapToDomainEntity(updatedDepartment as PrismaDepartment);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error updating department: ${error.message}`,
-        error.stack,
+        `Error updating department: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -126,23 +156,26 @@ export class PrismaDepartmentRepository implements IDepartmentRepository {
       });
 
       return deletedDepartment != null;
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error deleting department: ${error.message}`,
-        error.stack,
+        `Error deleting department: ${errorMessage}`,
+        errorStack,
       );
       return false;
     }
   }
 
-  // Helper method to map Prisma model to domain entity
-  private mapToDomainEntity(prismaDepartment: any): Department {
+  // Helper method to map Prisma model to domain entity with type safety
+  private mapToDomainEntity(prismaDepartment: PrismaDepartment): Department {
     return new Department({
       id: prismaDepartment.id,
       clinicId: prismaDepartment.clinicId,
       name: prismaDepartment.name,
-      description: prismaDepartment.description,
-      color: prismaDepartment.color,
+      description: prismaDepartment.description || undefined,
+      color: prismaDepartment.color || undefined,
       createdAt: prismaDepartment.createdAt,
       updatedAt: prismaDepartment.updatedAt,
     });

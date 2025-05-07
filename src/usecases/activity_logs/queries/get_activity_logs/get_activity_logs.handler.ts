@@ -9,6 +9,20 @@ import {
 import { ForbiddenException } from '@nestjs/common';
 import { PaginationMeta } from '../../../common/dtos/pagination.dto';
 import { IClinicRepository } from '../../../../domain/clinic/interfaces/clinic.repository.interface';
+import { ActivityLog } from '../../../../domain/activity_log/entities/activity_log.entity';
+
+// 定義分頁返回結果的介面
+interface PaginatedResult<T> {
+  items: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+  };
+}
+
+// 定義 findAll 方法的返回型別
+type FindAllResult = PaginatedResult<ActivityLog>;
 
 @Injectable()
 export class GetActivityLogsHandler {
@@ -29,17 +43,19 @@ export class GetActivityLogsHandler {
     }
 
     // Get activity logs with pagination
-    const { items: activityLogs, meta } =
-      await this.activityLogRepository.findAll({
-        clinicId: query.clinicId,
-        startDate: query.startDate,
-        endDate: query.endDate,
-        userId: query.userId,
-        action: query.action,
-        resource: query.resource,
-        page: query.pagination.page,
-        limit: query.pagination.limit,
-      });
+    // 使用型別斷言進行明確的型別指定
+    const result = (await this.activityLogRepository.findAll({
+      clinicId: query.clinicId,
+      startDate: query.startDate,
+      endDate: query.endDate,
+      userId: query.userId,
+      action: query.action,
+      resource: query.resource,
+      page: query.pagination.page,
+      limit: query.pagination.limit,
+    })) as FindAllResult;
+
+    const { items: activityLogs, meta } = result;
 
     // Get user information for each activity log
     const userIds = new Set(activityLogs.map((log) => log.userId));

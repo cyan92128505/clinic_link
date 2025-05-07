@@ -1,4 +1,4 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetAllRolesQuery } from './get_all_roles.query';
 import { Role } from 'src/domain/user/value_objects/role.enum';
@@ -49,6 +49,7 @@ export class GetAllRolesHandler implements IQueryHandler<GetAllRolesQuery> {
 
   constructor() {}
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async execute(query: GetAllRolesQuery) {
     const { requestedBy } = query;
 

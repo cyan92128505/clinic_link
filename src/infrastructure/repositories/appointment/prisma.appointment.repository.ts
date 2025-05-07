@@ -3,9 +3,14 @@ import { PrismaService } from '../../common/database/prisma/prisma.service';
 import { IAppointmentRepository } from '../../../domain/appointment/interfaces/appointment.repository.interface';
 import { Appointment } from '../../../domain/appointment/entities/appointment.entity';
 import {
+  AppointmentSource,
   AppointmentStatus,
   AppointmentStatusUtils,
 } from '../../../domain/appointment/value_objects/appointment.enum';
+import { Prisma } from '@prisma/client';
+
+// 定義 Prisma 模型與返回型別
+type PrismaAppointment = Prisma.AppointmentGetPayload<object>;
 
 @Injectable()
 export class PrismaAppointmentRepository implements IAppointmentRepository {
@@ -20,8 +25,8 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     clinicId: string,
     filters?: Partial<Appointment>,
   ): Promise<Appointment[]> {
-    // Build the where condition
-    const where: any = { clinicId };
+    // Build the where condition with 正確型別
+    const where: Prisma.AppointmentWhereInput = { clinicId };
 
     // Add filters if provided
     if (filters) {
@@ -52,11 +57,15 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       return appointments.map((appointment) =>
         this.mapToDomainEntity(appointment),
       );
-    } catch (error) {
-      this.logger.error(
-        `Error finding appointments: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error finding appointments: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error('Error finding appointments: Unknown error');
+      }
       throw error;
     }
   }
@@ -78,11 +87,15 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       }
 
       return this.mapToDomainEntity(appointment);
-    } catch (error) {
-      this.logger.error(
-        `Error finding appointment by ID: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error finding appointment by ID: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error('Error finding appointment by ID: Unknown error');
+      }
       throw error;
     }
   }
@@ -113,11 +126,15 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       });
 
       return this.mapToDomainEntity(createdAppointment);
-    } catch (error) {
-      this.logger.error(
-        `Error creating appointment: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error creating appointment: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error('Error creating appointment: Unknown error');
+      }
       throw error;
     }
   }
@@ -136,15 +153,19 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
           clinicId: clinicId,
           id: id,
         },
-        data,
+        data: data as unknown as Prisma.AppointmentUpdateInput,
       });
 
       return this.mapToDomainEntity(updatedAppointment);
-    } catch (error) {
-      this.logger.error(
-        `Error updating appointment: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error updating appointment: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error('Error updating appointment: Unknown error');
+      }
       throw error;
     }
   }
@@ -162,11 +183,15 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       });
 
       return deletedAppointment != null;
-    } catch (error) {
-      this.logger.error(
-        `Error deleting appointment: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error deleting appointment: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error('Error deleting appointment: Unknown error');
+      }
       return false;
     }
   }
@@ -185,7 +210,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
           status: {
             in: statuses
               .map((s) => AppointmentStatusUtils.fromString(s))
-              .filter((a) => a != null),
+              .filter((a): a is AppointmentStatus => a != null),
           },
         },
         orderBy: [{ appointmentTime: 'asc' }, { createdAt: 'asc' }],
@@ -194,11 +219,17 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       return appointments.map((appointment) =>
         this.mapToDomainEntity(appointment),
       );
-    } catch (error) {
-      this.logger.error(
-        `Error finding appointments by status: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error finding appointments by status: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error(
+          'Error finding appointments by status: Unknown error',
+        );
+      }
       throw error;
     }
   }
@@ -222,11 +253,17 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       return appointments.map((appointment) =>
         this.mapToDomainEntity(appointment),
       );
-    } catch (error) {
-      this.logger.error(
-        `Error finding appointments by doctor: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error finding appointments by doctor: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error(
+          'Error finding appointments by doctor: Unknown error',
+        );
+      }
       throw error;
     }
   }
@@ -250,11 +287,17 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       return appointments.map((appointment) =>
         this.mapToDomainEntity(appointment),
       );
-    } catch (error) {
-      this.logger.error(
-        `Error finding appointments by patient: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error finding appointments by patient: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error(
+          'Error finding appointments by patient: Unknown error',
+        );
+      }
       throw error;
     }
   }
@@ -275,11 +318,15 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       return appointments.map((appointment) =>
         this.mapToDomainEntity(appointment),
       );
-    } catch (error) {
-      this.logger.error(
-        `Error finding appointments by room: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error finding appointments by room: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error('Error finding appointments by room: Unknown error');
+      }
       throw error;
     }
   }
@@ -309,11 +356,15 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       return appointments.map((appointment) =>
         this.mapToDomainEntity(appointment),
       );
-    } catch (error) {
-      this.logger.error(
-        `Error finding appointments by date: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error finding appointments by date: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error('Error finding appointments by date: Unknown error');
+      }
       throw error;
     }
   }
@@ -327,43 +378,52 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     status: string,
   ): Promise<Appointment> {
     try {
+      const appointmentStatus = AppointmentStatusUtils.fromString(status);
+      if (!appointmentStatus) {
+        throw new Error(`Invalid appointment status: ${status}`);
+      }
+
       const updatedAppointment = await this.prisma.appointment.update({
         where: {
           id: id,
           clinicId: clinicId,
         },
         data: {
-          status: AppointmentStatusUtils.fromString(status),
+          status: appointmentStatus,
           updatedAt: new Date(),
         },
       });
 
       return this.mapToDomainEntity(updatedAppointment);
-    } catch (error) {
-      this.logger.error(
-        `Error updating appointment status: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error updating appointment status: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error('Error updating appointment status: Unknown error');
+      }
       throw error;
     }
   }
 
   // Helper method to map Prisma model to domain entity
-  private mapToDomainEntity(prismaAppointment: any): Appointment {
+  private mapToDomainEntity(prismaAppointment: PrismaAppointment): Appointment {
     return new Appointment({
       id: prismaAppointment.id,
       clinicId: prismaAppointment.clinicId,
       patientId: prismaAppointment.patientId,
-      doctorId: prismaAppointment.doctorId,
-      roomId: prismaAppointment.roomId,
-      appointmentNumber: prismaAppointment.appointmentNumber,
-      appointmentTime: prismaAppointment.appointmentTime,
-      checkinTime: prismaAppointment.checkinTime,
-      startTime: prismaAppointment.startTime,
-      endTime: prismaAppointment.endTime,
+      doctorId: prismaAppointment.doctorId || undefined,
+      roomId: prismaAppointment.roomId || undefined,
+      appointmentNumber: prismaAppointment.appointmentNumber || undefined,
+      appointmentTime: prismaAppointment.appointmentTime || undefined,
+      checkinTime: prismaAppointment.checkinTime || undefined,
+      startTime: prismaAppointment.startTime || undefined,
+      endTime: prismaAppointment.endTime || undefined,
       status: prismaAppointment.status as AppointmentStatus,
-      source: prismaAppointment.source,
-      note: prismaAppointment.note,
+      source: prismaAppointment.source as AppointmentSource,
+      note: prismaAppointment.note || undefined,
       createdAt: prismaAppointment.createdAt,
       updatedAt: prismaAppointment.updatedAt,
     });

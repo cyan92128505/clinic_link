@@ -24,6 +24,16 @@ import { GetPatientMedicalRecordsQuery } from 'src/usecases/patient_clinics/quer
 import { GetPatientMedicalRecordsHandler } from 'src/usecases/patient_clinics/queries/get_patient_medical_records/get_patient_medical_records.handler';
 import { PatientClinicRelationNotFoundException } from 'src/domain/patient/exceptions/patient.exceptions';
 
+/**
+ * Interface for patient authenticated request
+ */
+interface PatientAuthenticatedRequest extends Request {
+  patient: {
+    id: string;
+    // 其他可能的患者屬性
+  };
+}
+
 @ApiTags('Patient Medical Records')
 @Controller('patient/clinics')
 @UseGuards(PatientFirebaseAuthGuard)
@@ -84,14 +94,17 @@ export class PatientMedicalRecordsController {
     description: 'Patient not linked to this clinic or clinic not found',
   })
   async getPatientMedicalRecords(
-    @Req() req: any,
+    @Req() req: PatientAuthenticatedRequest,
     @Param('clinicId') clinicId: string,
     @Query() queryDto: GetPatientMedicalRecordsQueryDto,
   ): Promise<GetPatientMedicalRecordsResponseDto> {
     try {
+      // 從請求中安全地提取患者 ID
+      const patientId: string = req.patient.id;
+
       // Create query object from request parameters
       const query = new GetPatientMedicalRecordsQuery(
-        req.patient.id, // Patient ID from the JWT token
+        patientId, // Patient ID from the JWT token
         clinicId,
         queryDto.startDate,
         queryDto.endDate,
@@ -101,7 +114,7 @@ export class PatientMedicalRecordsController {
 
       // Execute the query handler
       return await this.getPatientMedicalRecordsHandler.execute(query);
-    } catch (error) {
+    } catch (error: unknown) {
       // Handle specific exceptions
       if (error instanceof PatientClinicRelationNotFoundException) {
         throw new NotFoundException(

@@ -9,7 +9,7 @@ export class SelectClinicResponse {
     description: 'Selected clinic information',
     type: Object,
   })
-  clinic: {
+  clinic!: {
     id: string;
     name: string;
     address: string;

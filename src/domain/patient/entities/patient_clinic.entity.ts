@@ -1,8 +1,8 @@
 import { BaseEntity } from 'src/domain/common/entities/base.entity';
 
 export class PatientClinic extends BaseEntity {
-  patientId: string;
-  clinicId: string;
+  patientId!: string;
+  clinicId!: string;
   patientNumber?: string;
   medicalHistory?: Record<string, any>;
   note?: string;

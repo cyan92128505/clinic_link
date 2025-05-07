@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import {
   parse,
   parseISO,
-  format,
   startOfDay,
   endOfDay,
   isValid,
@@ -31,7 +30,7 @@ export class DateTimeService {
     try {
       const parsed = parse(dateStr, formatStr, new Date());
       return isValid(parsed) ? parsed : null;
-    } catch (e) {
+    } catch {
       return null;
     }
   }
@@ -43,7 +42,7 @@ export class DateTimeService {
     try {
       const parsed = parseISO(dateStr);
       return isValid(parsed) ? parsed : null;
-    } catch (e) {
+    } catch {
       return null;
     }
   }

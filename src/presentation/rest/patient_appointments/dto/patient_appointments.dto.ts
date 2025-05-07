@@ -17,7 +17,7 @@ export class CreatePatientAppointmentDto {
   })
   @IsNotEmpty()
   @IsString()
-  clinicId: string;
+  clinicId!: string;
 
   @ApiPropertyOptional({
     description: 'Doctor ID',
@@ -41,7 +41,7 @@ export class CreatePatientAppointmentDto {
   })
   @IsOptional()
   @IsDateString()
-  appointmentTime: string;
+  appointmentTime!: string;
 
   @ApiPropertyOptional({
     description: 'Additional notes for the appointment',
@@ -57,7 +57,7 @@ export class UpdatePatientAppointmentDto {
     description: 'Clinic ID',
     example: 'cl9ebqhxk0000dsr3xxxx1c1s',
   })
-  clinicId: string;
+  clinicId!: string;
 
   @ApiPropertyOptional({
     description: 'Appointment time (ISO format)',
@@ -81,25 +81,25 @@ export class PatientAppointmentResponseDto {
     description: 'Appointment ID',
     example: 'cl9ebqhxk0000dsr3xxxx1c5f',
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({
     description: 'Clinic ID',
     example: 'cl9ebqhxk0000dsr3xxxx1c1s',
   })
-  clinicId: string;
+  clinicId!: string;
 
   @ApiProperty({
     description: 'Clinic name',
     example: '康健診所',
   })
-  clinicName: string;
+  clinicName!: string;
 
   @ApiProperty({
     description: 'Patient ID',
     example: 'cl9ebqhxk0000dsr3xxxx1c2d',
   })
-  patientId: string;
+  patientId!: string;
 
   @ApiPropertyOptional({
     description: 'Doctor ID',
@@ -172,14 +172,14 @@ export class PatientAppointmentResponseDto {
     enum: AppointmentStatus,
     example: AppointmentStatus.SCHEDULED,
   })
-  status: AppointmentStatus;
+  status!: AppointmentStatus;
 
   @ApiProperty({
     description: 'Appointment source',
     enum: AppointmentSource,
     example: AppointmentSource.ONLINE,
   })
-  source: AppointmentSource;
+  source!: AppointmentSource;
 
   @ApiPropertyOptional({
     description: 'Additional notes',
@@ -191,13 +191,13 @@ export class PatientAppointmentResponseDto {
     description: 'Creation date of the appointment',
     example: '2023-12-30T10:15:00+08:00',
   })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty({
     description: 'Last update date of the appointment',
     example: '2023-12-30T10:15:00+08:00',
   })
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 export class PatientAppointmentListResponseDto {
@@ -205,7 +205,7 @@ export class PatientAppointmentListResponseDto {
     description: 'List of appointments',
     type: [PatientAppointmentResponseDto],
   })
-  data: PatientAppointmentResponseDto[];
+  data!: PatientAppointmentResponseDto[];
 
   @ApiProperty({
     description: 'Pagination metadata',
@@ -216,7 +216,7 @@ export class PatientAppointmentListResponseDto {
       totalPages: 1,
     },
   })
-  meta: {
+  meta!: {
     total: number;
     page: number;
     limit: number;

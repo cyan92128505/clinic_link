@@ -7,6 +7,13 @@ import { IClinicRepository } from 'src/domain/clinic/interfaces/clinic.repositor
 import { PatientNotFoundException } from 'src/domain/patient/exceptions/patient.exceptions';
 import { Role } from 'src/domain/user/value_objects/role.enum';
 import { PatientClinic } from 'src/domain/patient/entities/patient_clinic.entity';
+import { Clinic } from 'src/domain/clinic/entities/clinic.entity';
+
+// Define a type for the patient clinic relation with clinic data
+interface PatientClinicWithClinic {
+  patientClinic: PatientClinic;
+  clinic: Clinic | null;
+}
 
 @Injectable()
 @QueryHandler(GetPatientProfileQuery)
@@ -67,7 +74,8 @@ export class GetPatientProfileHandler
     }
 
     // Fetch patient-clinic relations
-    let patientClinics = [] as Array<{} | null>;
+    let patientClinics: Array<PatientClinicWithClinic | null> = [];
+
     if (clinicIds && clinicIds.length > 0) {
       // Fetch patient clinics for specified clinics
       patientClinics = await Promise.all(

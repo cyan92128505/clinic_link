@@ -84,9 +84,7 @@ export class GetPatientClinicsHandler {
     );
 
     // Filter out null values (from skipped clinics)
-    const validClinicDtos = clinicDtos.filter(
-      (dto) => dto !== null,
-    ) as PatientClinicDto[];
+    const validClinicDtos = clinicDtos.filter((dto) => dto !== null);
 
     // Sort by last visit date, most recent first
     validClinicDtos.sort(

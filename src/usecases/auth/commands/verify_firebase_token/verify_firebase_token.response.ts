@@ -9,13 +9,13 @@ export class VerifyFirebaseTokenResponse {
     description: 'JWT access token',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
-  token: string;
+  token!: string;
 
   @ApiProperty({
     description: 'User information',
     type: Object,
   })
-  user: {
+  user!: {
     id: string;
     email: string;
     name: string;
@@ -30,5 +30,5 @@ export class VerifyFirebaseTokenResponse {
     description: 'Whether this is a new user',
     example: false,
   })
-  isNewUser: boolean;
+  isNewUser!: boolean;
 }

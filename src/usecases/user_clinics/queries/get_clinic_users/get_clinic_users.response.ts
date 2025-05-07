@@ -1,5 +1,4 @@
 import { User } from 'src/domain/user/entities/user.entity';
-import { Role } from 'src/domain/user/value_objects/role.enum';
 
 // Response DTO for retrieving users in a clinic
 export class GetClinicUsersResponse {
@@ -63,13 +62,6 @@ export class GetClinicUsersResponse {
       })),
       pagination: this.pagination,
     };
-  }
-
-  // Helper method to get roles for users
-  getUserRoles(users: User[]): Record<string, Role> {
-    // This method would typically be implemented in the repository layer
-    // For now, it's a placeholder
-    return {};
   }
 
   // Static method to create response from handler result

@@ -1,10 +1,10 @@
 import { BaseEntity } from 'src/domain/common/entities/base.entity';
 
 export class Doctor extends BaseEntity {
-  clinicId: string;
-  departmentId: string;
+  clinicId!: string;
+  departmentId!: string;
   userId?: string;
-  name: string;
+  name!: string;
   title?: string;
   specialty?: string;
   licenseNumber?: string;

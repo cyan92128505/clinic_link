@@ -4,6 +4,33 @@ import { IUserRepository } from '../../../domain/user/interfaces/user.repository
 import { User } from '../../../domain/user/entities/user.entity';
 import { UserClinic } from '../../../domain/user/entities/user_clinic.entity';
 import { Role } from '../../../domain/user/value_objects/role.enum';
+import { Prisma } from '@prisma/client';
+
+// 定義 Prisma User 模型的型別
+interface PrismaUser {
+  id: string;
+  email: string;
+  password: string;
+  name: string;
+  phone: string | null;
+  avatar: string | null;
+  isActive: boolean;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  clinics?: PrismaUserClinic[];
+}
+
+// 定義 Prisma UserClinic 模型的型別
+interface PrismaUserClinic {
+  userId: string;
+  clinicId: string;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+  user?: PrismaUser;
+  clinic?: any;
+}
 
 @Injectable()
 export class PrismaUserRepository implements IUserRepository {
@@ -11,11 +38,20 @@ export class PrismaUserRepository implements IUserRepository {
 
   constructor(private prisma: PrismaService) {}
 
-  async findByIds(ids: String[]): Promise<User[]> {
+  /**
+   * Helper method to check if an error is an Error object
+   */
+  private isError(error: unknown): error is Error {
+    return error instanceof Error;
+  }
+
+  async findByIds(ids: string[]): Promise<User[]> {
     try {
       const users = await this.prisma.user.findMany({
         where: {
-          id: ids.join(','),
+          id: {
+            in: ids,
+          },
         },
       });
 
@@ -23,11 +59,14 @@ export class PrismaUserRepository implements IUserRepository {
         return [];
       }
 
-      return users.map((user) => this.mapToDomainEntity(user));
-    } catch (error) {
+      return users.map((user) => this.mapToDomainEntity(user as PrismaUser));
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding user by ID: ${error.message}`,
-        error.stack,
+        `Error finding user by ID: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -43,12 +82,12 @@ export class PrismaUserRepository implements IUserRepository {
       });
 
       // Map Prisma model to domain entity
-      return users.map((user) => this.mapToDomainEntity(user));
-    } catch (error) {
-      this.logger.error(
-        `Error finding all users: ${error.message}`,
-        error.stack,
-      );
+      return users.map((user) => this.mapToDomainEntity(user as PrismaUser));
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error finding all users: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -71,11 +110,16 @@ export class PrismaUserRepository implements IUserRepository {
         return null;
       }
 
-      return this.mapToDomainEntityWithClinics(user);
-    } catch (error) {
+      return this.mapToDomainEntityWithClinics(
+        user as PrismaUser & { clinics: PrismaUserClinic[] },
+      );
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding user by ID: ${error.message}`,
-        error.stack,
+        `Error finding user by ID: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -99,11 +143,16 @@ export class PrismaUserRepository implements IUserRepository {
         return null;
       }
 
-      return this.mapToDomainEntityWithClinics(user);
-    } catch (error) {
+      return this.mapToDomainEntityWithClinics(
+        user as PrismaUser & { clinics: PrismaUserClinic[] },
+      );
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding user by email: ${error.message}`,
-        error.stack,
+        `Error finding user by email: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -129,9 +178,12 @@ export class PrismaUserRepository implements IUserRepository {
         },
       });
 
-      return this.mapToDomainEntity(createdUser);
-    } catch (error) {
-      this.logger.error(`Error creating user: ${error.message}`, error.stack);
+      return this.mapToDomainEntity(createdUser as PrismaUser);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error creating user: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -142,20 +194,23 @@ export class PrismaUserRepository implements IUserRepository {
   async update(id: string, data: Partial<User>): Promise<User> {
     try {
       // 從更新資料中排除 clinics 屬性，因為 Prisma 需要特定的格式
-      const { clinics, ...updateData } = data;
+      const { ...updateData } = data;
 
       const updatedUser = await this.prisma.user.update({
         where: {
           id: id,
         },
-        data: updateData,
+        data: updateData as Prisma.UserUpdateInput,
       });
 
       // 如果需要更新 clinics 關聯，應該使用單獨的方法
 
-      return this.mapToDomainEntity(updatedUser);
-    } catch (error) {
-      this.logger.error(`Error updating user: ${error.message}`, error.stack);
+      return this.mapToDomainEntity(updatedUser as PrismaUser);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error updating user: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -172,8 +227,11 @@ export class PrismaUserRepository implements IUserRepository {
       });
 
       return deletedUser != null;
-    } catch (error) {
-      this.logger.error(`Error deleting user: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
+      this.logger.error(`Error deleting user: ${errorMessage}`, errorStack);
       return false;
     }
   }
@@ -193,11 +251,14 @@ export class PrismaUserRepository implements IUserRepository {
         },
       });
 
-      return this.mapToUserClinicEntity(createdUserClinic);
-    } catch (error) {
+      return this.mapToUserClinicEntity(createdUserClinic as PrismaUserClinic);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error adding user to clinic: ${error.message}`,
-        error.stack,
+        `Error adding user to clinic: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -218,10 +279,13 @@ export class PrismaUserRepository implements IUserRepository {
       });
 
       return deletedUserClinic != null;
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error removing user from clinic: ${error.message}`,
-        error.stack,
+        `Error removing user from clinic: ${errorMessage}`,
+        errorStack,
       );
       return false;
     }
@@ -249,11 +313,14 @@ export class PrismaUserRepository implements IUserRepository {
         },
       });
 
-      return this.mapToUserClinicEntity(updatedUserClinic);
-    } catch (error) {
+      return this.mapToUserClinicEntity(updatedUserClinic as PrismaUserClinic);
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error updating user clinic role: ${error.message}`,
-        error.stack,
+        `Error updating user clinic role: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
@@ -274,7 +341,7 @@ export class PrismaUserRepository implements IUserRepository {
       });
 
       // 這裡也應該包含用戶的診所關聯
-      const users = [] as Array<User>;
+      const users: User[] = [];
       for (const userClinic of userClinics) {
         const user = await this.findById(userClinic.userId);
         if (user) {
@@ -283,43 +350,48 @@ export class PrismaUserRepository implements IUserRepository {
       }
 
       return users;
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = this.isError(error) ? error.message : '未知錯誤';
+      const errorStack = this.isError(error) ? error.stack : undefined;
+
       this.logger.error(
-        `Error finding users by clinic: ${error.message}`,
-        error.stack,
+        `Error finding users by clinic: ${errorMessage}`,
+        errorStack,
       );
       throw error;
     }
   }
 
   // Helper method to map Prisma model to domain entity
-  private mapToDomainEntity(prismaUser: any): User {
+  private mapToDomainEntity(prismaUser: PrismaUser): User {
     return new User({
       id: prismaUser.id,
       email: prismaUser.email,
       password: prismaUser.password,
       name: prismaUser.name,
-      phone: prismaUser.phone,
-      avatar: prismaUser.avatar,
+      phone: prismaUser.phone || undefined,
+      avatar: prismaUser.avatar || undefined,
       isActive: prismaUser.isActive,
-      lastLoginAt: prismaUser.lastLoginAt,
+      lastLoginAt: prismaUser.lastLoginAt || undefined,
       createdAt: prismaUser.createdAt,
       updatedAt: prismaUser.updatedAt,
     });
   }
 
   // 新增映射方法，包括用戶診所關聯
-  private mapToDomainEntityWithClinics(prismaUser: any): User {
+  private mapToDomainEntityWithClinics(
+    prismaUser: PrismaUser & { clinics: PrismaUserClinic[] },
+  ): User {
     const user = this.mapToDomainEntity(prismaUser);
 
     // 映射診所關聯
     if (prismaUser.clinics && Array.isArray(prismaUser.clinics)) {
       user.clinics = prismaUser.clinics.map(
-        (clinic) =>
+        (clinic: PrismaUserClinic) =>
           new UserClinic({
             userId: clinic.userId,
             clinicId: clinic.clinicId,
-            role: clinic.role,
+            role: clinic.role as Role,
             createdAt: clinic.createdAt,
             updatedAt: clinic.updatedAt,
           }),
@@ -330,7 +402,9 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   // Helper method to map Prisma model to UserClinic entity
-  private mapToUserClinicEntity(prismaUserClinic: any): UserClinic {
+  private mapToUserClinicEntity(
+    prismaUserClinic: PrismaUserClinic,
+  ): UserClinic {
     return new UserClinic({
       userId: prismaUserClinic.userId,
       clinicId: prismaUserClinic.clinicId,

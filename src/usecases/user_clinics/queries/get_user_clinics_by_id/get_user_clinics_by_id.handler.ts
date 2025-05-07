@@ -8,7 +8,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetUserClinicsByIdQuery } from './get_user_clinics_by_id.query';
 import { IUserRepository } from 'src/domain/user/interfaces/user.repository.interface';
 import { IClinicRepository } from 'src/domain/clinic/interfaces/clinic.repository.interface';
-import { Role } from 'src/domain/user/value_objects/role.enum';
+import { Role, RoleUtils } from 'src/domain/user/value_objects/role.enum';
 import { Clinic } from 'src/domain/clinic/entities/clinic.entity';
 
 @Injectable()
@@ -42,7 +42,10 @@ export class GetUserClinicsByIdHandler
     // Access control
     // Users can always see their own clinics
     // Admins can see any user's clinics
-    if (requestedBy.userId !== userId && requestedBy.userRole !== Role.ADMIN) {
+    const userRole =
+      RoleUtils.fromString(requestedBy.userRole) ?? Role.RECEPTIONIST;
+
+    if (requestedBy.userId !== userId && userRole !== Role.ADMIN) {
       throw new UnauthorizedException(
         'Insufficient permissions to view user clinics',
       );

@@ -9,7 +9,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { UpdateUserRoleCommand } from './update_user_role.command';
 import { IUserRepository } from 'src/domain/user/interfaces/user.repository.interface';
 import { IClinicRepository } from 'src/domain/clinic/interfaces/clinic.repository.interface';
-import { Role } from 'src/domain/user/value_objects/role.enum';
+import { Role, RoleUtils } from 'src/domain/user/value_objects/role.enum';
 
 @Injectable()
 @CommandHandler(UpdateUserRoleCommand)
@@ -50,17 +50,19 @@ export class UpdateUserRoleHandler
 
     // Access control
     const allowedRoles = [Role.ADMIN, Role.CLINIC_ADMIN];
+    const userRole =
+      RoleUtils.fromString(updatedBy.userRole) ?? Role.RECEPTIONIST;
 
     // Check if the user performing the update has sufficient permissions
     const updatingUser = clinicUsers.find((u) => u.id === updatedBy.userId);
-    if (!updatingUser || !allowedRoles.includes(updatedBy.userRole as Role)) {
+    if (!updatingUser || !allowedRoles.includes(userRole)) {
       throw new UnauthorizedException(
         'Insufficient permissions to update user role',
       );
     }
 
     // Additional check for Clinic Admin: can only manage their own clinic
-    if (updatedBy.userRole === Role.CLINIC_ADMIN) {
+    if (userRole === Role.CLINIC_ADMIN) {
       const isAdminOfClinic = clinicUsers.some(
         (adminUser) => adminUser.id === updatedBy.userId,
       );

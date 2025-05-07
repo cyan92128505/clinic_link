@@ -1,6 +1,5 @@
 import { Room } from 'src/domain/room/entities/room.entity';
 import { Appointment } from 'src/domain/appointment/entities/appointment.entity';
-import { RoomStatus } from 'src/domain/room/value_objects/room.enum';
 import { AppointmentStatus } from 'src/domain/appointment/value_objects/appointment.enum';
 import { AppointmentSource } from 'src/domain/appointment/value_objects/appointment.enum';
 

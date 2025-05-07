@@ -47,7 +47,7 @@ export class VerifyPatientTokenHandler
 
       // Optional: Log authentication attempt
       // This could be integrated with an activity log system
-      await this.logAuthenticationAttempt(patient, {
+      this.logAuthenticationAttempt(patient, {
         success: true,
         ipAddress,
         userAgent,
@@ -61,13 +61,15 @@ export class VerifyPatientTokenHandler
         phoneNumber: decodedToken.phone_number,
       };
     } catch (error) {
-      // Log failed authentication attempt
-      await this.logAuthenticationAttempt(null, {
-        success: false,
-        ipAddress,
-        userAgent,
-        errorMessage: error.message,
-      });
+      if (error instanceof Error) {
+        // Log failed authentication attempt
+        this.logAuthenticationAttempt(null, {
+          success: false,
+          ipAddress,
+          userAgent,
+          errorMessage: error.message,
+        });
+      }
 
       // Rethrow or transform the error
       if (error instanceof UnauthorizedException) {
@@ -80,7 +82,7 @@ export class VerifyPatientTokenHandler
   }
 
   // Optional method for logging authentication attempts
-  private async logAuthenticationAttempt(
+  private logAuthenticationAttempt(
     patient: Patient | null,
     details: {
       success: boolean;

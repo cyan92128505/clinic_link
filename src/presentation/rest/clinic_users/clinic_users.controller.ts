@@ -26,7 +26,6 @@ import { GetClinicUsersHandler } from '../../../usecases/user_clinics/queries/ge
 // DTOs
 import {
   AddUserToClinicDto,
-  RemoveUserFromClinicDto,
   UpdateUserRoleDto,
   GetClinicUsersDto,
 } from './dto/clinic_users.dto';

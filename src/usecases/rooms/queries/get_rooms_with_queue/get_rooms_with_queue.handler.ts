@@ -7,7 +7,6 @@ import { IClinicRepository } from 'src/domain/clinic/interfaces/clinic.repositor
 import { IDoctorRepository } from 'src/domain/doctor/interfaces/doctor.repository.interface';
 import { RoomStatus } from 'src/domain/room/value_objects/room.enum';
 import { Role } from 'src/domain/user/value_objects/role.enum';
-import { AppointmentStatus } from 'src/domain/appointment/value_objects/appointment.enum';
 
 @Injectable()
 @QueryHandler(GetRoomsWithQueueQuery)

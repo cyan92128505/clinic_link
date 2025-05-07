@@ -8,7 +8,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RemoveUserFromClinicCommand } from './remove_user_from_clinic.command';
 import { IUserRepository } from 'src/domain/user/interfaces/user.repository.interface';
 import { IClinicRepository } from 'src/domain/clinic/interfaces/clinic.repository.interface';
-import { Role } from 'src/domain/user/value_objects/role.enum';
+import { Role, RoleUtils } from 'src/domain/user/value_objects/role.enum';
 
 @Injectable()
 @CommandHandler(RemoveUserFromClinicCommand)
@@ -58,9 +58,11 @@ export class RemoveUserFromClinicHandler
         'Insufficient permissions to remove user from clinic',
       );
     }
+    const removedByUserRole =
+      RoleUtils.fromString(removedBy.userRole) ?? Role.RECEPTIONIST;
 
     // Additional check: Clinic admin can only remove users from their own clinic
-    if (removedBy.userRole === Role.CLINIC_ADMIN) {
+    if (removedByUserRole === Role.CLINIC_ADMIN) {
       const isAdminOfClinic = clinicUsers.some(
         (adminUser) => adminUser.id === removedBy.userId,
       );

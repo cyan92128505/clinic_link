@@ -5,8 +5,8 @@ import {
 } from '../value_objects/appointment.enum';
 
 export class Appointment extends BaseEntity {
-  clinicId: string;
-  patientId: string;
+  clinicId!: string;
+  patientId!: string;
   doctorId?: string;
   roomId?: string;
   appointmentNumber?: number;

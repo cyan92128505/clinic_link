@@ -31,6 +31,16 @@ import { GetPatientClinicsQuery } from '../../../usecases/patient_clinics/querie
 import { GetPatientClinicInfoHandler } from '../../../usecases/patient_clinics/queries/get_patient_clinic_info/get_patient_clinic_info.handler';
 import { GetPatientClinicInfoQuery } from '../../../usecases/patient_clinics/queries/get_patient_clinic_info/get_patient_clinic_info.query';
 
+/**
+ * Interface for patient authenticated request
+ */
+interface PatientAuthenticatedRequest extends Request {
+  patient: {
+    id: string;
+    // 其他可能的患者屬性
+  };
+}
+
 @ApiTags('patient-clinics')
 @Controller('patient/clinics')
 @UseGuards(PatientFirebaseAuthGuard)
@@ -53,9 +63,10 @@ export class PatientClinicsController {
     description: 'Returns list of linked clinics',
     type: [PatientClinicInfoDto],
   })
-  async getPatientClinics(@Req() req) {
+  async getPatientClinics(@Req() req: PatientAuthenticatedRequest) {
     // The patient is attached to request by the PatientFirebaseAuthGuard
-    const query = new GetPatientClinicsQuery(req.patient.id);
+    const patientId: string = req.patient.id;
+    const query = new GetPatientClinicsQuery(patientId);
     return await this.getPatientClinicsHandler.execute(query);
   }
 
@@ -81,21 +92,25 @@ export class PatientClinicsController {
     description: 'Clinic not found',
   })
   async linkToClinic(
-    @Req() req,
+    @Req() req: PatientAuthenticatedRequest,
     @Param('clinicId') clinicId: string,
     @Body() dto: LinkToClinicDto,
   ) {
     // Create command with patient ID from the auth guard
+    const patientId: string = req.patient.id;
     const command = new LinkPatientToClinicCommand(
-      req.patient.id,
+      patientId,
       clinicId,
       dto.patientNumber,
     );
 
     try {
       return await this.linkPatientToClinicHandler.execute(command);
-    } catch (error) {
-      if (error.message.includes('Clinic not found')) {
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        error.message.includes('Clinic not found')
+      ) {
         throw new NotFoundException('Clinic not found');
       }
       throw error;
@@ -122,13 +137,20 @@ export class PatientClinicsController {
     status: 404,
     description: 'Patient not linked to clinic',
   })
-  async getClinicInfo(@Req() req, @Param('clinicId') clinicId: string) {
-    const query = new GetPatientClinicInfoQuery(req.patient.id, clinicId);
+  async getClinicInfo(
+    @Req() req: PatientAuthenticatedRequest,
+    @Param('clinicId') clinicId: string,
+  ) {
+    const patientId: string = req.patient.id;
+    const query = new GetPatientClinicInfoQuery(patientId, clinicId);
 
     try {
       return await this.getPatientClinicInfoHandler.execute(query);
-    } catch (error) {
-      if (error.message.includes('Patient not linked to clinic')) {
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        error.message.includes('Patient not linked to clinic')
+      ) {
         throw new NotFoundException('Patient not linked to clinic');
       }
       throw error;
