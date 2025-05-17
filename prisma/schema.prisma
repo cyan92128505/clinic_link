@@ -20,8 +20,8 @@ model Clinic {
   updatedAt DateTime @updatedAt
 
   // Relations
-  users          UserClinic[]
-  patientClinics PatientClinic[] // Changed from patients to patientClinics
+  userRoles      UserRole[] // Renamed from users to userRoles
+  patientClinics PatientClinic[]
   departments    Department[]
   rooms          Room[]
   doctors        Doctor[]
@@ -42,29 +42,78 @@ model User {
   updatedAt   DateTime  @updatedAt
 
   // Relations
-  clinics      UserClinic[]
+  userRoles    UserRole[] // Renamed from clinics to userRoles
   activityLogs ActivityLog[]
 }
 
-model UserClinic {
-  userId    String
-  clinicId  String
-  role      Role     @default(STAFF)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// New Permission model
+model Permission {
+  id          String   @id @default(cuid())
+  code        String   @unique // e.g., patients:read
+  name        String
+  description String?
+  resource    String // Resource type, e.g., patients
+  action      String // Action, e.g., read, write, delete
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  rolePermissions RolePermission[]
 
-  @@id([userId, clinicId])
+  @@index([resource, action])
 }
 
-// Modified Patient model - removed clinicId
+// New SystemRole model (replacing the Role enum)
+model SystemRole {
+  id          String   @id @default(cuid())
+  code        String   @unique // System level role code, e.g., SUPER_ADMIN
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@index([code])
+}
+
+// New RolePermission model
+model RolePermission {
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  // Relations
+  systemRole SystemRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+// Replacing UserClinic with UserRole
+model UserRole {
+  userId       String
+  clinicId     String
+  systemRoleId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinic     Clinic     @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  systemRole SystemRole @relation(fields: [systemRoleId], references: [id])
+
+  @@id([userId, clinicId])
+  @@index([userId, systemRoleId])
+}
+
 model Patient {
   id               String    @id @default(cuid())
-  firebaseUid      String?   @unique // Added for Firebase authentication
-  nationalId       String?   @unique // Made globally unique
+  firebaseUid      String?   @unique
+  nationalId       String?   @unique
   name             String
   birthDate        DateTime?
   gender           Gender?
@@ -77,7 +126,7 @@ model Patient {
   updatedAt        DateTime  @updatedAt
 
   // Relations
-  clinicPatients PatientClinic[] // New relation
+  clinicPatients PatientClinic[]
   appointments   Appointment[]
 
   @@index([firebaseUid])
@@ -86,13 +135,12 @@ model Patient {
   @@index([name])
 }
 
-// New PatientClinic model for many-to-many relationship
 model PatientClinic {
   patientId      String
   clinicId       String
-  patientNumber  String? // Clinic-specific patient number
-  medicalHistory Json? // Clinic-specific medical history
-  note           String? // Clinic-specific notes
+  patientNumber  String?
+  medicalHistory Json?
+  note           String?
   firstVisitDate DateTime @default(now())
   lastVisitDate  DateTime @default(now())
   isActive       Boolean  @default(true)
@@ -104,7 +152,7 @@ model PatientClinic {
   clinic  Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 
   @@id([patientId, clinicId])
-  @@unique([clinicId, patientNumber]) // Patient number is unique within a clinic
+  @@unique([clinicId, patientNumber])
   @@index([clinicId, isActive])
 }
 
@@ -113,7 +161,7 @@ model Department {
   clinicId    String
   name        String
   description String?
-  color       String? // For frontend display
+  color       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -128,14 +176,14 @@ model Doctor {
   id            String   @id @default(cuid())
   clinicId      String
   departmentId  String
-  userId        String? // If doctor is also a system user
+  userId        String?
   name          String
   title         String?
   specialty     String?
   licenseNumber String?
   bio           String?
   avatar        String?
-  scheduleData  Json? // Doctor scheduling data
+  scheduleData  Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -177,25 +225,24 @@ model DoctorRoom {
   @@id([doctorId, roomId])
 }
 
-// Appointment model remains mostly the same
 model Appointment {
   id                String            @id @default(cuid())
   clinicId          String
-  patientId         String // Still references Patient.id
+  patientId         String
   doctorId          String?
   roomId            String?
-  appointmentNumber Int? // 看診號碼
-  appointmentTime   DateTime? // 預約時間
-  checkinTime       DateTime? // 報到時間
-  startTime         DateTime? // 開始看診時間
-  endTime           DateTime? // 結束看診時間
+  appointmentNumber Int?
+  appointmentTime   DateTime?
+  checkinTime       DateTime?
+  startTime         DateTime?
+  endTime           DateTime?
   status            AppointmentStatus @default(SCHEDULED)
   source            AppointmentSource @default(WALK_IN)
   note              String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
-  // 關聯
+  // Relations
   clinic  Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
   doctor  Doctor? @relation(fields: [doctorId], references: [id])
@@ -228,15 +275,8 @@ model ActivityLog {
   @@index([userId, createdAt])
 }
 
-enum Role {
-  ADMIN // System administrator
-  CLINIC_ADMIN // Clinic administrator
-  DOCTOR // Doctor
-  NURSE // Nurse
-  STAFF // General staff
-  RECEPTIONIST // Front desk receptionist
-}
-
+// We'll keep the existing enums but remove the Role enum
+// as it's being replaced by the SystemRole model
 enum Gender {
   MALE
   FEMALE
@@ -244,24 +284,24 @@ enum Gender {
 }
 
 enum RoomStatus {
-  OPEN // Room is open for appointments
-  PAUSED // Temporarily paused
-  CLOSED // Room is closed
+  OPEN
+  PAUSED
+  CLOSED
 }
 
 enum AppointmentStatus {
-  SCHEDULED // Scheduled appointment
-  CHECKED_IN // Patient has checked in
-  IN_PROGRESS // Currently in progress
-  COMPLETED // Completed appointment
-  CANCELLED // Cancelled appointment
-  NO_SHOW // Patient didn't show up
+  SCHEDULED
+  CHECKED_IN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
 }
 
 enum AppointmentSource {
-  WALK_IN // Walk-in registration
-  PHONE // Phone reservation
-  ONLINE // Online reservation
-  LINE // LINE app reservation
-  APP // Mobile app reservation
+  WALK_IN
+  PHONE
+  ONLINE
+  LINE
+  APP
 }
