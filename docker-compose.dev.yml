@@ -1,5 +1,5 @@
 # docker-compose.dev.yml
-version: '3.8'
+version: "3.8"
 
 services:
   api:
@@ -7,8 +7,8 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     ports:
-      - '3000:3000'
-      - '9229:9229' # Debug port
+      - "3000:3000"
+      - "9229:9229" # Debug port
     volumes:
       - ./:/usr/src/app
       - /usr/src/app/node_modules # Prevent mounting host node_modules
@@ -31,7 +31,7 @@ services:
     restart: unless-stopped
 
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3000/liveness']
+      test: ["CMD", "curl", "-f", "http://localhost:3000/liveness"]
       interval: 60s
       timeout: 5s
       retries: 3
@@ -42,7 +42,7 @@ services:
       context: ./web
       dockerfile: Dockerfile.dev
     ports:
-      - '5173:5173'
+      - "5173:5173"
     volumes:
       - ./web:/app
       - /app/node_modules
@@ -56,10 +56,24 @@ services:
       - clinic-network
     restart: unless-stopped
 
+  web-vue3:
+    build:
+      context: ./web-vue3
+      dockerfile: Dockerfile
+    ports:
+      - "5174:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    depends_on:
+      - api
+    networks:
+      - clinic-network
+    restart: unless-stopped
+
   postgres:
     image: postgres:15-alpine
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
@@ -69,7 +83,7 @@ services:
     networks:
       - clinic-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d clinic_management']
+      test: ["CMD-SHELL", "pg_isready -U postgres -d clinic_management"]
       interval: 120s # Increased to 2 minutes
       timeout: 10s
       retries: 5
@@ -78,13 +92,13 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - '6379:6379'
+      - "6379:6379"
     volumes:
       - redis-data:/data
     networks:
       - clinic-network
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -92,9 +106,9 @@ services:
   mqtt-broker:
     image: emqx:5.8.6
     ports:
-      - '1883:1883'
-      - '8084:8084'
-      - '18083:18083' # EMQX dashboard
+      - "1883:1883"
+      - "8084:8084"
+      - "18083:18083" # EMQX dashboard
     volumes:
       - emqx-data:/opt/emqx/data
       - emqx-etc:/opt/emqx/etc

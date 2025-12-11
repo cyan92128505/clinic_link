@@ -32,6 +32,21 @@ services:
       - VITE_FIREBASE_CONFIG=${PROD_FIREBASE_CONFIG}
     networks:
       - web
+    depends_on:
+      - api
+
+  web-vue3:
+    build:
+      context: ./web-vue3
+      dockerfile: Dockerfile
+    ports:
+      - "5174:5173"
+    environment:
+      - VITE_API_URL=${PROD_API_URL}
+      - VITE_MQTT_BROKER_URL=${PROD_MQTT_WS_URL}
+      - VITE_FIREBASE_CONFIG=${PROD_FIREBASE_CONFIG}
+    depends_on:
+      - api
 
   postgres:
     image: postgres:15-alpine
